@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { useColors, spacing, borderRadius } from '@/theme';
@@ -27,6 +26,7 @@ interface HorizontalListProps<T extends ContentItem> {
   showFavorite?: boolean;
   itemWidth?: number;
   showInfo?: boolean;
+  compact?: boolean;
 }
 
 export function HorizontalList<T extends ContentItem>({
@@ -38,62 +38,68 @@ export function HorizontalList<T extends ContentItem>({
   showFavorite = true,
   itemWidth,
   showInfo = true,
+  compact = true,
 }: HorizontalListProps<T>) {
   const colors = useColors();
 
   const getDefaultWidth = () => {
+    if (compact) {
+      // Largura compacta similar à grade de 3 colunas
+      return (SCREEN_WIDTH - spacing.md * 4) / 3;
+    }
     switch (type) {
       case 'channel':
-        return SCREEN_WIDTH * 0.7;
+        return SCREEN_WIDTH * 0.5;
       case 'movie':
       case 'series':
-        return SCREEN_WIDTH * 0.38;
+        return SCREEN_WIDTH * 0.32;
       default:
-        return SCREEN_WIDTH * 0.45;
+        return SCREEN_WIDTH * 0.35;
     }
   };
 
   const width = itemWidth || getDefaultWidth();
 
+  const getMinHeight = () => {
+    if (compact) {
+      return type === 'channel' ? 140 : 200;
+    }
+    return type === 'channel' ? 180 : 280;
+  };
+
   const styles = StyleSheet.create({
     container: {
-      minHeight: type === 'channel' ? 180 : 280,
+      minHeight: getMinHeight(),
     },
     contentContainer: {
-      paddingHorizontal: spacing.md,
-      gap: spacing.md,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.sm,
     },
     itemContainer: {
       width,
     },
-    loadingContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.xl,
-    },
     skeletonContainer: {
       flexDirection: 'row',
-      paddingHorizontal: spacing.md,
-      gap: spacing.md,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.sm,
     },
     skeletonItem: {
       width,
     },
     skeletonImage: {
       width: '100%',
-      aspectRatio: type === 'channel' ? 16 / 9 : 2 / 3,
+      aspectRatio: type === 'channel' ? 4 / 3 : 2 / 3,
       borderRadius: borderRadius.lg,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     skeletonText: {
-      height: 14,
+      height: 12,
       width: '80%',
       borderRadius: borderRadius.sm,
       marginBottom: spacing.xs,
     },
     skeletonTextShort: {
-      height: 12,
+      height: 10,
       width: '50%',
       borderRadius: borderRadius.sm,
     },
@@ -112,6 +118,7 @@ export function HorizontalList<T extends ContentItem>({
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
+              compact={compact}
             />
           </View>
         );
@@ -124,7 +131,7 @@ export function HorizontalList<T extends ContentItem>({
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
               showInfo={showInfo}
-              width={width}
+              compact={compact}
             />
           </View>
         );
@@ -137,7 +144,7 @@ export function HorizontalList<T extends ContentItem>({
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
               showInfo={showInfo}
-              width={width}
+              compact={compact}
             />
           </View>
         );
@@ -148,7 +155,7 @@ export function HorizontalList<T extends ContentItem>({
 
   const renderLoadingSkeleton = () => (
     <View style={styles.skeletonContainer}>
-      {Array.from({ length: 3 }).map((_, index) => (
+      {Array.from({ length: 4 }).map((_, index) => (
         <View key={index} style={styles.skeletonItem}>
           <Skeleton style={styles.skeletonImage} />
           <Skeleton style={styles.skeletonText} />

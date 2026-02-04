@@ -48,7 +48,7 @@ export function VideoPlayer({
   const duration = status?.isLoaded ? status.durationMillis || 0 : 0;
   const buffered = status?.isLoaded ? status.playableDurationMillis || 0 : 0;
 
-  const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const styles = StyleSheet.create({
     container: {

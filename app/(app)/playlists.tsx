@@ -7,26 +7,26 @@ import {
   Pressable,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   List,
   Plus,
-  MoreVertical,
   Trash2,
-  Edit2,
-  Check,
-  Play,
+  RefreshCw,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
 import { Card, Button, EmptyState, Modal, Input, Badge } from '@/components/ui';
 import {
   usePlaylists,
-  usePlaylist,
   useCreatePlaylist,
   useDeletePlaylist,
   useSetActivePlaylist,
+  useRefreshPlaylist,
 } from '@/hooks';
 import type { Playlist } from '@/types';
 
@@ -48,6 +48,9 @@ export default function PlaylistsScreen() {
   const createPlaylist = useCreatePlaylist();
   const deletePlaylist = useDeletePlaylist();
   const setActivePlaylist = useSetActivePlaylist();
+  const refreshPlaylist = useRefreshPlaylist();
+
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const handleCreatePlaylist = useCallback(async () => {
     if (!newPlaylistName.trim() || !newPlaylistUrl.trim()) {
@@ -84,8 +87,22 @@ export default function PlaylistsScreen() {
   }, [deletePlaylist]);
 
   const handleSetActive = useCallback((playlist: Playlist) => {
-    setActivePlaylist.mutate(playlist.id);
+    if (!playlist.isActive) {
+      setActivePlaylist.mutate(playlist.id);
+    }
   }, [setActivePlaylist]);
+
+  const handleRefresh = useCallback(async (playlist: Playlist) => {
+    setRefreshingId(playlist.id);
+    try {
+      await refreshPlaylist.mutateAsync(playlist.id);
+      Alert.alert('Sucesso', 'Playlist atualizada com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar a playlist');
+    } finally {
+      setRefreshingId(null);
+    }
+  }, [refreshPlaylist]);
 
   const styles = StyleSheet.create({
     listContent: {
@@ -137,7 +154,10 @@ export default function PlaylistsScreen() {
       justifyContent: 'center',
     },
     actionButtonActive: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.success + '20',
+    },
+    actionButtonRefresh: {
+      backgroundColor: colors.primary + '20',
     },
     actionButtonDelete: {
       backgroundColor: colors.error + '20',
@@ -208,23 +228,40 @@ export default function PlaylistsScreen() {
         </View>
 
         <View style={styles.playlistActions}>
+          {/* Botão Ativar/Ativa */}
           <Pressable
             style={[
               styles.actionButton,
               item.isActive ? styles.actionButtonActive : undefined,
             ]}
             onPress={() => handleSetActive(item)}
+            disabled={item.isActive || setActivePlaylist.isPending}
           >
             {item.isActive ? (
-              <Check size={18} color={colors.foreground} />
+              <CheckCircle2 size={18} color={colors.success} />
             ) : (
-              <Play size={18} color={colors.foreground} />
+              <Circle size={18} color={colors.mutedForeground} />
             )}
           </Pressable>
 
+          {/* Botão Atualizar */}
+          <Pressable
+            style={[styles.actionButton, styles.actionButtonRefresh]}
+            onPress={() => handleRefresh(item)}
+            disabled={refreshingId === item.id}
+          >
+            {refreshingId === item.id ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <RefreshCw size={18} color={colors.primary} />
+            )}
+          </Pressable>
+
+          {/* Botão Excluir */}
           <Pressable
             style={[styles.actionButton, styles.actionButtonDelete]}
             onPress={() => handleDeletePlaylist(item)}
+            disabled={deletePlaylist.isPending}
           >
             <Trash2 size={18} color={colors.error} />
           </Pressable>
@@ -234,7 +271,7 @@ export default function PlaylistsScreen() {
   );
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false} noPadding>
       <Header
         title="Playlists"
         icon={List}

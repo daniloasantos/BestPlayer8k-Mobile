@@ -11,13 +11,20 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor - adiciona token de autenticação
+// Request interceptor - adiciona token de autenticação e profileId
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await storage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Adiciona o profileId selecionado ao header
+    const profileId = await storage.getItem('selected_profile_id');
+    if (profileId) {
+      config.headers['x-profile-id'] = profileId;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

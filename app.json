@@ -3,6 +3,7 @@
     "name": "BestPlayer8k",
     "slug": "bestplayer8k-mobile",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -23,7 +24,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.bestplayer8k.mobile"
+      "package": "com.bestplayer8k.mobile",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",

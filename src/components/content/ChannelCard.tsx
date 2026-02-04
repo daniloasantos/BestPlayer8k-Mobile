@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Play, Heart, Clock } from 'lucide-react-native';
+import { Heart } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
-import { QualityBadge, Badge } from '@/components/ui';
+import { QualityBadge } from '@/components/ui';
 import type { Channel } from '@/types';
 
 interface ChannelCardProps {
@@ -12,10 +12,8 @@ interface ChannelCardProps {
   onFavoritePress?: () => void;
   showFavorite?: boolean;
   compact?: boolean;
+  width?: number;
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
 
 export function ChannelCard({
   channel,
@@ -23,6 +21,7 @@ export function ChannelCard({
   onFavoritePress,
   showFavorite = true,
   compact = false,
+  width,
 }: ChannelCardProps) {
   const colors = useColors();
   const router = useRouter();
@@ -35,9 +34,16 @@ export function ChannelCard({
     }
   };
 
+  // Gera cor baseada no nome do canal
+  const getInitialColor = (name: string) => {
+    const colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#6366F1'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
   const styles = StyleSheet.create({
     container: {
-      width: compact ? CARD_WIDTH : '100%',
+      width: width || '100%',
       backgroundColor: colors.card,
       borderRadius: borderRadius.lg,
       borderWidth: 1,
@@ -46,103 +52,69 @@ export function ChannelCard({
     },
     imageContainer: {
       width: '100%',
-      aspectRatio: 16 / 9,
+      aspectRatio: compact ? 4 / 3 : 16 / 9,
       backgroundColor: colors.muted,
       position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: compact ? spacing.sm : spacing.md,
     },
     image: {
       width: '100%',
       height: '100%',
+      maxHeight: compact ? 50 : 80,
     },
     imagePlaceholder: {
-      width: '100%',
-      height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.muted,
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: 0,
-    },
-    overlayVisible: {
-      opacity: 1,
-    },
-    playButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: colors.primary,
+      width: compact ? 40 : 56,
+      height: compact ? 40 : 56,
+      borderRadius: compact ? 20 : 28,
+      backgroundColor: getInitialColor(channel.name),
       alignItems: 'center',
       justifyContent: 'center',
     },
-    badges: {
+    initialText: {
+      fontSize: compact ? 18 : 24,
+      fontWeight: '800',
+      color: '#fff',
+    },
+    qualityBadge: {
       position: 'absolute',
       top: spacing.xs,
       left: spacing.xs,
-      flexDirection: 'row',
-      gap: spacing.xs,
     },
     favoriteButton: {
       position: 'absolute',
       top: spacing.xs,
       right: spacing.xs,
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      width: compact ? 26 : 32,
+      height: compact ? 26 : 32,
+      borderRadius: borderRadius.md,
+      backgroundColor: channel.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.4)',
+      borderWidth: 1,
+      borderColor: channel.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
     },
     content: {
-      padding: compact ? spacing.sm : spacing.md,
+      padding: spacing.sm,
+      paddingTop: spacing.xs,
+      minHeight: compact ? 52 : 60,
     },
     name: {
       ...typography.body,
+      fontSize: compact ? 11 : 14,
       color: colors.foreground,
+      fontWeight: '700',
+      letterSpacing: -0.2,
+      lineHeight: compact ? 14 : 18,
+    },
+    categoryText: {
+      fontSize: compact ? 9 : 10,
       fontWeight: '600',
-      marginBottom: spacing.xs,
-    },
-    nameCompact: {
-      fontSize: 14,
-    },
-    category: {
-      ...typography.label,
       color: colors.mutedForeground,
-    },
-    footer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: spacing.sm,
-    },
-    watchedContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.xs,
-    },
-    watchedText: {
-      ...typography.small,
-      color: colors.mutedForeground,
-    },
-    liveIndicator: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.xs,
-    },
-    liveDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.error,
-    },
-    liveText: {
-      ...typography.small,
-      color: colors.error,
-      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+      marginTop: 3,
     },
   });
 
@@ -150,7 +122,10 @@ export function ChannelCard({
     <Pressable
       style={({ pressed }) => [
         styles.container,
-        { opacity: pressed ? 0.8 : 1 },
+        {
+          opacity: pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
       ]}
       onPress={handlePress}
     >
@@ -159,23 +134,17 @@ export function ChannelCard({
           <Image
             source={{ uri: channel.logo }}
             style={styles.image}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Play size={compact ? 24 : 32} color={colors.mutedForeground} />
+            <Text style={styles.initialText}>
+              {channel.name.charAt(0).toUpperCase()}
+            </Text>
           </View>
         )}
 
-        <View style={styles.badges}>
-          {channel.type === 'LIVE' && (
-            <Badge variant="error" size="sm">
-              <View style={styles.liveIndicator}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>AO VIVO</Text>
-              </View>
-            </Badge>
-          )}
+        <View style={styles.qualityBadge}>
           {channel.quality && (
             <QualityBadge quality={channel.quality} size="sm" />
           )}
@@ -188,36 +157,25 @@ export function ChannelCard({
               e.stopPropagation?.();
               onFavoritePress?.();
             }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Heart
-              size={18}
-              color={channel.isFavorite ? colors.error : colors.foreground}
-              fill={channel.isFavorite ? colors.error : 'transparent'}
+              size={compact ? 12 : 16}
+              color={channel.isFavorite ? '#EF4444' : colors.foreground}
+              fill={channel.isFavorite ? '#EF4444' : 'transparent'}
             />
           </Pressable>
         )}
       </View>
 
       <View style={styles.content}>
-        <Text
-          style={[styles.name, compact ? styles.nameCompact : undefined]}
-          numberOfLines={1}
-        >
+        <Text style={styles.name} numberOfLines={2}>
           {channel.name}
         </Text>
         {channel.category && (
-          <Text style={styles.category} numberOfLines={1}>
+          <Text style={styles.categoryText} numberOfLines={1}>
             {channel.category}
           </Text>
-        )}
-
-        {channel.lastWatched && (
-          <View style={styles.footer}>
-            <View style={styles.watchedContainer}>
-              <Clock size={12} color={colors.mutedForeground} />
-              <Text style={styles.watchedText}>Assistido recentemente</Text>
-            </View>
-          </View>
         )}
       </View>
     </Pressable>

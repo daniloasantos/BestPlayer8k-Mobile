@@ -32,7 +32,7 @@ export default function LibraryScreen() {
     isRefetching,
   } = useChannels({
     type: channelType,
-    category: selectedCategory || undefined,
+    categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
   });
 
@@ -84,7 +84,7 @@ export default function LibraryScreen() {
   const contentType = activeTab === 'movies' ? 'movie' : 'series';
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false} noPadding>
       <Header
         title="Biblioteca"
         icon={Library}
@@ -122,6 +122,7 @@ export default function LibraryScreen() {
       <ContentGrid
         data={items}
         type={contentType}
+        numColumns={3}
         isLoading={loadingContent && items.length === 0}
         isRefreshing={isRefetching}
         onRefresh={refetchContent}

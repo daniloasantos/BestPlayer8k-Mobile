@@ -93,7 +93,7 @@ export function Section({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   padding: {
     paddingHorizontal: spacing.lg,
@@ -101,35 +101,40 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   titleContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   icon: {
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 2,
   },
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+    flexShrink: 0,
   },
   seeAllText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   content: {},

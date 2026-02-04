@@ -22,7 +22,7 @@ export default function LiveScreen() {
     isRefetching,
   } = useChannels({
     type: 'LIVE',
-    category: selectedCategory || undefined,
+    categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
   });
 
@@ -59,7 +59,7 @@ export default function LiveScreen() {
   const channels = channelsData?.items || [];
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false} noPadding>
       <Header
         title="TV ao Vivo"
         icon={Tv}
@@ -86,6 +86,7 @@ export default function LiveScreen() {
       <ContentGrid
         data={channels}
         type="channel"
+        numColumns={3}
         isLoading={loadingChannels && channels.length === 0}
         isRefreshing={isRefetching}
         onRefresh={refetchChannels}

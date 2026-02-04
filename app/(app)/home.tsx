@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Tv, Film, Heart, Clock, ChevronRight, Search, Bell } from 'lucide-react-native';
+import { Tv, Tv2, Film, Heart, Clock, ChevronRight, Search, Bell } from 'lucide-react-native';
 import { useAuthStore } from '@/stores';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header, Section } from '@/components/layout';
@@ -12,7 +12,9 @@ import {
   useDashboardStats,
   useFavorites,
   useChannels,
+  useToggleFavorite,
 } from '@/hooks';
+import type { Channel } from '@/types';
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -43,6 +45,20 @@ export default function HomeScreen() {
     refetch: refetchLive,
   } = useChannels({ type: 'LIVE', limit: 10 });
 
+  const {
+    data: movies,
+    isLoading: loadingMovies,
+    refetch: refetchMovies,
+  } = useChannels({ type: 'MOVIE', limit: 10 });
+
+  const {
+    data: series,
+    isLoading: loadingSeries,
+    refetch: refetchSeries,
+  } = useChannels({ type: 'SERIES', limit: 10 });
+
+  const toggleFavorite = useToggleFavorite();
+
   const isRefreshing = loadingRecent && loadingStats;
 
   const onRefresh = useCallback(async () => {
@@ -51,8 +67,14 @@ export default function HomeScreen() {
       refetchStats(),
       refetchFavorites(),
       refetchLive(),
+      refetchMovies(),
+      refetchSeries(),
     ]);
-  }, [refetchRecent, refetchStats, refetchFavorites, refetchLive]);
+  }, [refetchRecent, refetchStats, refetchFavorites, refetchLive, refetchMovies, refetchSeries]);
+
+  const handleFavoritePress = useCallback((item: Channel) => {
+    toggleFavorite.mutate(item.id);
+  }, [toggleFavorite]);
 
   const styles = StyleSheet.create({
     headerContainer: {
@@ -60,29 +82,31 @@ export default function HomeScreen() {
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
+      paddingVertical: spacing.sm,
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      gap: spacing.sm,
     },
     greeting: {
       ...typography.header,
       color: colors.foreground,
+      fontSize: 18,
     },
     subtitle: {
       ...typography.label,
       color: colors.mutedForeground,
+      fontSize: 12,
     },
     headerActions: {
       flexDirection: 'row',
-      gap: spacing.sm,
+      gap: spacing.xs,
     },
     iconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: colors.muted,
       alignItems: 'center',
       justifyContent: 'center',
@@ -90,53 +114,55 @@ export default function HomeScreen() {
     statsContainer: {
       flexDirection: 'row',
       paddingHorizontal: spacing.lg,
-      gap: spacing.md,
-      marginBottom: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
     },
     statCard: {
       flex: 1,
-      padding: spacing.md,
+      padding: spacing.sm,
     },
     statIconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: borderRadius.md,
+      width: 32,
+      height: 32,
+      borderRadius: borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     statValue: {
       ...typography.title,
       color: colors.foreground,
-      fontSize: 24,
+      fontSize: 20,
     },
     statLabel: {
       ...typography.label,
       color: colors.mutedForeground,
+      fontSize: 11,
     },
     emptyState: {
-      padding: spacing.xl,
+      padding: spacing.lg,
       alignItems: 'center',
     },
     emptyText: {
       ...typography.body,
       color: colors.mutedForeground,
       textAlign: 'center',
+      fontSize: 13,
     },
     quickActions: {
       flexDirection: 'row',
       paddingHorizontal: spacing.lg,
-      gap: spacing.md,
-      marginBottom: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
     },
     quickAction: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
-      padding: spacing.md,
+      gap: spacing.xs,
+      padding: spacing.sm,
       backgroundColor: colors.card,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       borderWidth: 1,
       borderColor: colors.cardBorder,
     },
@@ -144,6 +170,7 @@ export default function HomeScreen() {
       ...typography.label,
       color: colors.foreground,
       fontWeight: '600',
+      fontSize: 13,
     },
   });
 
@@ -162,10 +189,10 @@ export default function HomeScreen() {
   }) => (
     <Card style={styles.statCard}>
       <View style={[styles.statIconContainer, { backgroundColor: `${iconColor}20` }]}>
-        <Icon size={20} color={iconColor} />
+        <Icon size={16} color={iconColor} />
       </View>
       {isLoading ? (
-        <Skeleton style={{ width: 50, height: 28, marginBottom: spacing.xs }} />
+        <Skeleton style={{ width: 40, height: 22, marginBottom: spacing.xs }} />
       ) : (
         <Text style={styles.statValue}>{value ?? 0}</Text>
       )}
@@ -174,7 +201,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false} noPadding>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -189,7 +216,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.headerContainer}>
           <View style={styles.headerLeft}>
-            <Avatar name={user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'U'} size={48} />
+            <Avatar name={user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'U'} size={40} />
             <View>
               <Text style={styles.greeting}>
                 Olá, {user?.profiles?.find(p => p.isPrimary)?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'}!
@@ -265,6 +292,7 @@ export default function HomeScreen() {
               data={recentlyWatched}
               type="channel"
               onItemPress={(channel) => router.push(`/channels/${channel.id}` as any)}
+              onFavoritePress={handleFavoritePress}
             />
           ) : (
             <View style={styles.emptyState}>
@@ -293,6 +321,7 @@ export default function HomeScreen() {
               data={liveChannels.items}
               type="channel"
               onItemPress={(channel) => router.push(`/channels/${channel.id}` as any)}
+              onFavoritePress={handleFavoritePress}
             />
           ) : (
             <View style={styles.emptyState}>
@@ -302,6 +331,53 @@ export default function HomeScreen() {
             </View>
           )}
         </Section>
+
+        {/* Movies */}
+        <Section
+          title="Filmes"
+          icon={Film}
+          actionLabel="Ver todos"
+          onActionPress={() => router.push('/library')}
+        >
+          {loadingMovies ? (
+            <HorizontalList
+              data={[]}
+              type="movie"
+              isLoading={true}
+            />
+          ) : movies?.items && movies.items.length > 0 ? (
+            <HorizontalList
+              data={movies.items}
+              type="movie"
+              onItemPress={(movie) => router.push(`/channels/${movie.id}` as any)}
+              onFavoritePress={handleFavoritePress}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                Nenhum filme disponível.
+              </Text>
+            </View>
+          )}
+        </Section>
+
+        {/* Series */}
+        {series?.items && series.items.length > 0 && (
+          <Section
+            title="Séries"
+            icon={Tv2}
+            actionLabel="Ver todos"
+            onActionPress={() => router.push('/library')}
+          >
+            <HorizontalList
+              data={series.items}
+              type="series"
+              isLoading={loadingSeries}
+              onItemPress={(item) => router.push(`/series/${item.id}` as any)}
+              onFavoritePress={handleFavoritePress}
+            />
+          </Section>
+        )}
 
         {/* Favorites */}
         {favorites && favorites.length > 0 && (
@@ -316,11 +392,12 @@ export default function HomeScreen() {
               type="channel"
               isLoading={loadingFavorites}
               onItemPress={(channel) => router.push(`/channels/${channel.id}` as any)}
+              onFavoritePress={handleFavoritePress}
             />
           </Section>
         )}
 
-        <View style={{ height: spacing.xl * 2 }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </ScreenContainer>
   );

@@ -1,22 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Play, Heart, Star, Calendar } from 'lucide-react-native';
+import { Film, Heart, Play } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { QualityBadge } from '@/components/ui';
-import type { Movie } from '@/types';
+import type { Movie, Channel } from '@/types';
 
 interface MovieCardProps {
-  movie: Movie;
+  movie: Movie | Channel;
   onPress?: () => void;
   onFavoritePress?: () => void;
   showFavorite?: boolean;
   showInfo?: boolean;
-  width?: number;
+  compact?: boolean;
+  width?: number | string;
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DEFAULT_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
 
 export function MovieCard({
   movie,
@@ -24,22 +22,35 @@ export function MovieCard({
   onFavoritePress,
   showFavorite = true,
   showInfo = true,
-  width = DEFAULT_WIDTH,
+  compact = false,
+  width,
 }: MovieCardProps) {
   const colors = useColors();
   const router = useRouter();
+  const [imageError, setImageError] = useState(false);
 
   const handlePress = () => {
     if (onPress) {
       onPress();
     } else {
-      router.push(`/movies/${movie.id}` as any);
+      router.push(`/channels/${movie.id}` as any);
     }
+  };
+
+  // Verifica se tem imagem válida
+  const posterUrl = 'poster' in movie ? movie.poster : movie.logo;
+  const hasValidImage = posterUrl && posterUrl.trim() !== '' && !imageError;
+
+  // Gera cor baseada no nome
+  const getInitialColor = (name: string) => {
+    const colorList = ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#6366F1'];
+    const index = name.charCodeAt(0) % colorList.length;
+    return colorList[index];
   };
 
   const styles = StyleSheet.create({
     container: {
-      width,
+      width: width || '100%',
       backgroundColor: colors.card,
       borderRadius: borderRadius.lg,
       borderWidth: 1,
@@ -51,6 +62,7 @@ export function MovieCard({
       aspectRatio: 2 / 3,
       backgroundColor: colors.muted,
       position: 'relative',
+      overflow: 'hidden',
     },
     image: {
       width: '100%',
@@ -63,11 +75,28 @@ export function MovieCard({
       justifyContent: 'center',
       backgroundColor: colors.muted,
     },
+    placeholderCircle: {
+      width: compact ? 36 : 56,
+      height: compact ? 36 : 56,
+      borderRadius: compact ? 18 : 28,
+      backgroundColor: getInitialColor(movie.name) + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xs,
+    },
+    initialText: {
+      fontSize: compact ? 16 : 22,
+      fontWeight: '800',
+      color: getInitialColor(movie.name),
+    },
+    placeholderIcon: {
+      opacity: 0.3,
+    },
     overlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      padding: spacing.sm,
       justifyContent: 'space-between',
+      padding: compact ? spacing.xs : spacing.sm,
     },
     topRow: {
       flexDirection: 'row',
@@ -77,14 +106,15 @@ export function MovieCard({
     badges: {
       flexDirection: 'row',
       gap: spacing.xs,
-      flexWrap: 'wrap',
       flex: 1,
     },
     favoriteButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      width: compact ? 24 : 32,
+      height: compact ? 24 : 32,
+      borderRadius: borderRadius.md,
+      backgroundColor: movie.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
+      borderWidth: 1,
+      borderColor: movie.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: spacing.xs,
@@ -93,78 +123,68 @@ export function MovieCard({
       alignItems: 'center',
     },
     playButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.primary,
+      width: compact ? 32 : 44,
+      height: compact ? 32 : 44,
+      borderRadius: compact ? 16 : 22,
+      backgroundColor: '#3B82F6',
       alignItems: 'center',
       justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
     },
     content: {
       padding: spacing.sm,
+      paddingTop: spacing.xs,
+      minHeight: compact ? 48 : 56,
     },
     title: {
       ...typography.body,
       color: colors.foreground,
+      fontWeight: '700',
+      fontSize: compact ? 10 : 13,
+      letterSpacing: -0.2,
+      lineHeight: compact ? 13 : 16,
+    },
+    categoryText: {
+      fontSize: compact ? 8 : 10,
       fontWeight: '600',
-      fontSize: 14,
-      marginBottom: spacing.xs,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      marginBottom: spacing.xs,
-    },
-    metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    metaText: {
-      ...typography.small,
       color: colors.mutedForeground,
-    },
-    ratingText: {
-      ...typography.small,
-      color: colors.accent,
-      fontWeight: '600',
-    },
-    genre: {
-      ...typography.small,
-      color: colors.mutedForeground,
-    },
-    duration: {
-      ...typography.small,
-      color: colors.mutedForeground,
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+      marginTop: 2,
     },
   });
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return null;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
 
   return (
     <Pressable
       style={({ pressed }) => [
         styles.container,
-        { opacity: pressed ? 0.8 : 1 },
+        {
+          opacity: pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
       ]}
       onPress={handlePress}
     >
       <View style={styles.imageContainer}>
-        {movie.poster ? (
+        {hasValidImage && posterUrl ? (
           <Image
-            source={{ uri: movie.poster }}
+            source={{ uri: posterUrl }}
             style={styles.image}
             resizeMode="cover"
+            onError={() => setImageError(true)}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Play size={32} color={colors.mutedForeground} />
+            <View style={styles.placeholderCircle}>
+              <Text style={styles.initialText}>
+                {movie.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Film size={compact ? 18 : 24} color={colors.mutedForeground} style={styles.placeholderIcon} />
           </View>
         )}
 
@@ -182,18 +202,19 @@ export function MovieCard({
                   e.stopPropagation?.();
                   onFavoritePress?.();
                 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Heart
-                  size={18}
-                  color={movie.isFavorite ? colors.error : colors.foreground}
-                  fill={movie.isFavorite ? colors.error : 'transparent'}
+                  size={compact ? 12 : 16}
+                  color={movie.isFavorite ? '#EF4444' : '#fff'}
+                  fill={movie.isFavorite ? '#EF4444' : 'transparent'}
                 />
               </Pressable>
             )}
           </View>
           <View style={styles.bottomRow}>
             <View style={styles.playButton}>
-              <Play size={20} color={colors.foreground} fill={colors.foreground} />
+              <Play size={compact ? 14 : 20} color="#fff" fill="#fff" />
             </View>
           </View>
         </View>
@@ -204,29 +225,9 @@ export function MovieCard({
           <Text style={styles.title} numberOfLines={2}>
             {movie.name}
           </Text>
-
-          <View style={styles.metaRow}>
-            {movie.rating && (
-              <View style={styles.metaItem}>
-                <Star size={12} color={colors.accent} fill={colors.accent} />
-                <Text style={styles.ratingText}>{movie.rating.toFixed(1)}</Text>
-              </View>
-            )}
-            {movie.year && (
-              <View style={styles.metaItem}>
-                <Calendar size={12} color={colors.mutedForeground} />
-                <Text style={styles.metaText}>{movie.year}</Text>
-              </View>
-            )}
-          </View>
-
-          {movie.duration && (
-            <Text style={styles.duration}>{formatDuration(movie.duration)}</Text>
-          )}
-
-          {movie.genre && (
-            <Text style={styles.genre} numberOfLines={1}>
-              {movie.genre}
+          {'category' in movie && movie.category && (
+            <Text style={styles.categoryText} numberOfLines={1}>
+              {movie.category}
             </Text>
           )}
         </View>

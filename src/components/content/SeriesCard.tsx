@@ -1,22 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Play, Heart, Star, Tv, Calendar } from 'lucide-react-native';
+import { Play, Heart, Tv2 } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { QualityBadge, Badge } from '@/components/ui';
-import type { Series } from '@/types';
+import type { Series, Channel } from '@/types';
 
 interface SeriesCardProps {
-  series: Series;
+  series: Series | Channel;
   onPress?: () => void;
   onFavoritePress?: () => void;
   showFavorite?: boolean;
   showInfo?: boolean;
-  width?: number;
+  compact?: boolean;
+  width?: number | string;
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DEFAULT_WIDTH = (SCREEN_WIDTH - spacing.lg * 3) / 2;
 
 export function SeriesCard({
   series,
@@ -24,10 +22,12 @@ export function SeriesCard({
   onFavoritePress,
   showFavorite = true,
   showInfo = true,
-  width = DEFAULT_WIDTH,
+  compact = false,
+  width,
 }: SeriesCardProps) {
   const colors = useColors();
   const router = useRouter();
+  const [imageError, setImageError] = useState(false);
 
   const handlePress = () => {
     if (onPress) {
@@ -37,9 +37,20 @@ export function SeriesCard({
     }
   };
 
+  // Verifica se tem imagem válida
+  const posterUrl = 'poster' in series ? series.poster : series.logo;
+  const hasValidImage = posterUrl && posterUrl.trim() !== '' && !imageError;
+
+  // Gera cor baseada no nome
+  const getInitialColor = (name: string) => {
+    const colorList = ['#10B981', '#8B5CF6', '#EC4899', '#F59E0B', '#3B82F6', '#6366F1'];
+    const index = name.charCodeAt(0) % colorList.length;
+    return colorList[index];
+  };
+
   const styles = StyleSheet.create({
     container: {
-      width,
+      width: width || '100%',
       backgroundColor: colors.card,
       borderRadius: borderRadius.lg,
       borderWidth: 1,
@@ -51,6 +62,7 @@ export function SeriesCard({
       aspectRatio: 2 / 3,
       backgroundColor: colors.muted,
       position: 'relative',
+      overflow: 'hidden',
     },
     image: {
       width: '100%',
@@ -63,10 +75,27 @@ export function SeriesCard({
       justifyContent: 'center',
       backgroundColor: colors.muted,
     },
+    placeholderCircle: {
+      width: compact ? 36 : 56,
+      height: compact ? 36 : 56,
+      borderRadius: compact ? 18 : 28,
+      backgroundColor: getInitialColor(series.name) + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xs,
+    },
+    initialText: {
+      fontSize: compact ? 16 : 22,
+      fontWeight: '800',
+      color: getInitialColor(series.name),
+    },
+    placeholderIcon: {
+      opacity: 0.3,
+    },
     overlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      padding: spacing.sm,
+      padding: compact ? spacing.xs : spacing.sm,
       justifyContent: 'space-between',
     },
     topRow: {
@@ -76,15 +105,17 @@ export function SeriesCard({
     },
     badges: {
       flexDirection: 'row',
-      gap: spacing.xs,
-      flexWrap: 'wrap',
+      gap: 2,
       flex: 1,
+      flexWrap: 'wrap',
     },
     favoriteButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      width: compact ? 24 : 32,
+      height: compact ? 24 : 32,
+      borderRadius: borderRadius.md,
+      backgroundColor: series.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
+      borderWidth: 1,
+      borderColor: series.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: spacing.xs,
@@ -93,81 +124,71 @@ export function SeriesCard({
       alignItems: 'center',
     },
     playButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.primary,
+      width: compact ? 32 : 44,
+      height: compact ? 32 : 44,
+      borderRadius: compact ? 16 : 22,
+      backgroundColor: '#10B981',
       alignItems: 'center',
       justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 4,
     },
     content: {
       padding: spacing.sm,
+      paddingTop: spacing.xs,
+      minHeight: compact ? 48 : 56,
     },
     title: {
       ...typography.body,
       color: colors.foreground,
+      fontWeight: '700',
+      fontSize: compact ? 10 : 13,
+      letterSpacing: -0.2,
+      lineHeight: compact ? 13 : 16,
+    },
+    categoryText: {
+      fontSize: compact ? 8 : 10,
       fontWeight: '600',
-      fontSize: 14,
-      marginBottom: spacing.xs,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      marginBottom: spacing.xs,
-    },
-    metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    metaText: {
-      ...typography.small,
       color: colors.mutedForeground,
-    },
-    ratingText: {
-      ...typography.small,
-      color: colors.accent,
-      fontWeight: '600',
-    },
-    seasonsText: {
-      ...typography.small,
-      color: colors.primary,
-      fontWeight: '600',
-    },
-    genre: {
-      ...typography.small,
-      color: colors.mutedForeground,
-    },
-    episodeCount: {
-      ...typography.small,
-      color: colors.mutedForeground,
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+      marginTop: 2,
     },
   });
 
-  const getTotalEpisodes = () => {
-    if (!series.seasons) return 0;
-    return series.seasons.reduce((total, season) => total + (season.episodes?.length || 0), 0);
-  };
+  // Verifica se é uma série completa com temporadas
+  const hasSeries = 'seasons' in series && series.seasons;
 
   return (
     <Pressable
       style={({ pressed }) => [
         styles.container,
-        { opacity: pressed ? 0.8 : 1 },
+        {
+          opacity: pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
       ]}
       onPress={handlePress}
     >
       <View style={styles.imageContainer}>
-        {series.poster ? (
+        {hasValidImage && posterUrl ? (
           <Image
-            source={{ uri: series.poster }}
+            source={{ uri: posterUrl }}
             style={styles.image}
             resizeMode="cover"
+            onError={() => setImageError(true)}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Tv size={32} color={colors.mutedForeground} />
+            <View style={styles.placeholderCircle}>
+              <Text style={styles.initialText}>
+                {series.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Tv2 size={compact ? 18 : 24} color={colors.mutedForeground} style={styles.placeholderIcon} />
           </View>
         )}
 
@@ -177,7 +198,7 @@ export function SeriesCard({
               {series.quality && (
                 <QualityBadge quality={series.quality} size="sm" />
               )}
-              {series.seasons && series.seasons.length > 0 && (
+              {!compact && hasSeries && series.seasons && series.seasons.length > 0 && (
                 <Badge variant="primary" size="sm">
                   {series.seasons.length} Temp.
                 </Badge>
@@ -190,18 +211,19 @@ export function SeriesCard({
                   e.stopPropagation?.();
                   onFavoritePress?.();
                 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Heart
-                  size={18}
-                  color={series.isFavorite ? colors.error : colors.foreground}
-                  fill={series.isFavorite ? colors.error : 'transparent'}
+                  size={compact ? 12 : 16}
+                  color={series.isFavorite ? '#EF4444' : '#fff'}
+                  fill={series.isFavorite ? '#EF4444' : 'transparent'}
                 />
               </Pressable>
             )}
           </View>
           <View style={styles.bottomRow}>
             <View style={styles.playButton}>
-              <Play size={20} color={colors.foreground} fill={colors.foreground} />
+              <Play size={compact ? 14 : 20} color="#fff" fill="#fff" />
             </View>
           </View>
         </View>
@@ -212,41 +234,9 @@ export function SeriesCard({
           <Text style={styles.title} numberOfLines={2}>
             {series.name}
           </Text>
-
-          <View style={styles.metaRow}>
-            {series.rating && (
-              <View style={styles.metaItem}>
-                <Star size={12} color={colors.accent} fill={colors.accent} />
-                <Text style={styles.ratingText}>{series.rating.toFixed(1)}</Text>
-              </View>
-            )}
-            {series.year && (
-              <View style={styles.metaItem}>
-                <Calendar size={12} color={colors.mutedForeground} />
-                <Text style={styles.metaText}>{series.year}</Text>
-              </View>
-            )}
-          </View>
-
-          {series.seasons && (
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <Tv size={12} color={colors.primary} />
-                <Text style={styles.seasonsText}>
-                  {series.seasons.length} Temporada{series.seasons.length !== 1 ? 's' : ''}
-                </Text>
-              </View>
-              {getTotalEpisodes() > 0 && (
-                <Text style={styles.episodeCount}>
-                  • {getTotalEpisodes()} episódios
-                </Text>
-              )}
-            </View>
-          )}
-
-          {series.genre && (
-            <Text style={styles.genre} numberOfLines={1}>
-              {series.genre}
+          {'category' in series && series.category && (
+            <Text style={styles.categoryText} numberOfLines={1}>
+              {series.category}
             </Text>
           )}
         </View>

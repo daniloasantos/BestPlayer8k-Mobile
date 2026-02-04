@@ -58,22 +58,25 @@ export function ContentGrid<T extends ContentItem>({
 }: ContentGridProps<T>) {
   const colors = useColors();
 
+  // Calculate skeleton width based on columns
+  const skeletonWidth = numColumns === 3 ? '31%' : numColumns === 2 ? '48%' : '100%';
+  const gapSize = numColumns === 3 ? spacing.sm : spacing.md;
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
     },
     contentContainer: {
-      padding: spacing.md,
+      padding: spacing.sm,
       paddingBottom: spacing.xl * 2,
     },
     columnWrapper: {
-      justifyContent: 'space-between',
-      gap: spacing.md,
+      justifyContent: 'flex-start',
+      gap: gapSize,
     },
     itemContainer: {
-      flex: 1,
-      maxWidth: numColumns === 1 ? '100%' : `${100 / numColumns - 2}%`,
-      marginBottom: spacing.md,
+      width: numColumns === 1 ? '100%' : numColumns === 2 ? '48.5%' : '31.5%',
+      marginBottom: gapSize,
     },
     loadingContainer: {
       padding: spacing.xl,
@@ -82,30 +85,32 @@ export function ContentGrid<T extends ContentItem>({
     skeletonGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      padding: spacing.md,
+      justifyContent: 'flex-start',
+      gap: gapSize,
+      padding: spacing.sm,
     },
     skeletonItem: {
-      width: '48%',
-      marginBottom: spacing.md,
+      width: skeletonWidth,
     },
     skeletonImage: {
       width: '100%',
-      aspectRatio: type === 'channel' ? 16 / 9 : 2 / 3,
+      aspectRatio: type === 'channel' ? 4 / 3 : 2 / 3,
       borderRadius: borderRadius.lg,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     skeletonText: {
-      height: 16,
+      height: 14,
       borderRadius: borderRadius.sm,
       marginBottom: spacing.xs,
     },
     skeletonTextShort: {
       width: '60%',
-      height: 14,
+      height: 12,
       borderRadius: borderRadius.sm,
     },
   });
+
+  const isCompact = numColumns >= 3;
 
   const renderItem: ListRenderItem<T> = ({ item }) => {
     const handlePress = () => onItemPress?.(item);
@@ -120,7 +125,7 @@ export function ContentGrid<T extends ContentItem>({
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
-              compact
+              compact={isCompact}
             />
           </View>
         );
@@ -132,6 +137,7 @@ export function ContentGrid<T extends ContentItem>({
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
+              compact={isCompact}
             />
           </View>
         );
@@ -143,6 +149,7 @@ export function ContentGrid<T extends ContentItem>({
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
+              compact={isCompact}
             />
           </View>
         );
@@ -153,7 +160,7 @@ export function ContentGrid<T extends ContentItem>({
 
   const renderLoadingSkeleton = () => (
     <View style={styles.skeletonGrid}>
-      {Array.from({ length: 6 }).map((_, index) => (
+      {Array.from({ length: numColumns * 3 }).map((_, index) => (
         <View key={index} style={styles.skeletonItem}>
           <Skeleton style={styles.skeletonImage} />
           <Skeleton style={styles.skeletonText} />

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -13,11 +13,13 @@ import {
   Heart,
   List,
   Globe,
+  Users,
+  ChevronDown,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/stores';
 import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
-import { Avatar, Card } from '@/components/ui';
+import { Avatar, Card, ProfileSelector } from '@/components/ui';
 import { useFavoritesStats, useDashboardStats } from '@/hooks';
 
 interface MenuItemProps {
@@ -36,6 +38,14 @@ export default function ProfileScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
+  const selectProfile = useAuthStore((state) => state.selectProfile);
+  const getCurrentProfile = useAuthStore((state) => state.getCurrentProfile);
+
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+
+  const currentProfile = getCurrentProfile();
+  const profiles = user?.profiles || [];
 
   const { data: favStats } = useFavoritesStats();
   const { data: dashStats } = useDashboardStats();
@@ -76,15 +86,46 @@ export default function ProfileScreen() {
       alignItems: 'center',
       padding: spacing.xl,
     },
+    avatarButton: {
+      position: 'relative',
+    },
+    switchProfileBadge: {
+      position: 'absolute',
+      bottom: -4,
+      right: -4,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: colors.background,
+    },
     userName: {
       ...typography.title,
       color: colors.foreground,
       marginTop: spacing.md,
     },
+    switchProfileButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.muted,
+    },
+    switchProfileText: {
+      ...typography.label,
+      color: colors.primary,
+      fontWeight: '600',
+    },
     userEmail: {
       ...typography.body,
       color: colors.mutedForeground,
-      marginTop: spacing.xs,
+      marginTop: spacing.sm,
     },
     statsContainer: {
       flexDirection: 'row',
@@ -219,8 +260,35 @@ export default function ProfileScreen() {
       >
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <Avatar name={user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'U'} size={80} />
-          <Text style={styles.userName}>{user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'Usuário'}</Text>
+          <Pressable
+            style={styles.avatarButton}
+            onPress={() => setShowProfileSelector(true)}
+          >
+            <Avatar
+              name={currentProfile?.name || user?.email?.split('@')[0] || 'U'}
+              size={80}
+            />
+            {profiles.length > 1 && (
+              <View style={styles.switchProfileBadge}>
+                <Users size={14} color="#fff" />
+              </View>
+            )}
+          </Pressable>
+
+          <Text style={styles.userName}>
+            {currentProfile?.name || user?.email?.split('@')[0] || 'Usuário'}
+          </Text>
+
+          {profiles.length > 1 && (
+            <Pressable
+              style={styles.switchProfileButton}
+              onPress={() => setShowProfileSelector(true)}
+            >
+              <Text style={styles.switchProfileText}>Trocar perfil</Text>
+              <ChevronDown size={14} color={colors.primary} />
+            </Pressable>
+          )}
+
           <Text style={styles.userEmail}>{user?.email}</Text>
 
           <View style={styles.statsContainer}>
@@ -316,6 +384,17 @@ export default function ProfileScreen() {
           BestPlayer8k v1.0.0
         </Text>
       </ScrollView>
+
+      <ProfileSelector
+        visible={showProfileSelector}
+        onClose={() => setShowProfileSelector(false)}
+        profiles={profiles}
+        selectedProfileId={selectedProfileId}
+        onSelectProfile={async (profileId) => {
+          await selectProfile(profileId);
+          setShowProfileSelector(false);
+        }}
+      />
     </ScreenContainer>
   );
 }

@@ -137,7 +137,7 @@ export default function FavoritesScreen() {
   };
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scrollable={false} noPadding>
       <Header
         title="Favoritos"
         icon={Heart}
@@ -184,6 +184,7 @@ export default function FavoritesScreen() {
       <ContentGrid
         data={filteredFavorites}
         type={getContentType(activeFilter)}
+        numColumns={3}
         isLoading={isLoading && filteredFavorites.length === 0}
         isRefreshing={isRefetching}
         onRefresh={refetch}

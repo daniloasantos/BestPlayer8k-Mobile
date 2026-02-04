@@ -74,4 +74,9 @@ export const authService = {
     const token = await storage.getItem('auth_token');
     return !!token;
   },
+
+  async getMe(): Promise<User> {
+    const response = await api.get<User>('/auth/me');
+    return response.data;
+  },
 };
