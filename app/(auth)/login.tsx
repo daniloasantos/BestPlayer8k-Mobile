@@ -13,15 +13,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input } from '../../src/components';
 import { useLogin } from '../../src/hooks';
 import { getErrorMessage } from '../../src/services';
+import { useColors, spacing } from '@/theme';
 
 export default function LoginScreen() {
+  const colors = useColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const loginMutation = useLogin();
 
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(message);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erro', 'Preencha todos os campos');
+      showAlert('Erro', 'Preencha todos os campos');
       return;
     }
 
@@ -29,12 +39,12 @@ export default function LoginScreen() {
       await loginMutation.mutateAsync({ email, password });
       router.replace('/(app)/home');
     } catch (error) {
-      Alert.alert('Erro', getErrorMessage(error));
+      showAlert('Erro', getErrorMessage(error));
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -44,8 +54,10 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.title}>BestPlayer8k</Text>
-            <Text style={styles.subtitle}>Faça login para continuar</Text>
+            <Text style={[styles.title, { color: colors.foreground }]}>BestPlayer8k</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              Faça login para continuar
+            </Text>
           </View>
 
           <View style={styles.form}>
@@ -75,9 +87,11 @@ export default function LoginScreen() {
             />
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Não tem uma conta? </Text>
-              <Link href="/(auth)/register" asChild>
-                <Text style={styles.link}>Cadastre-se</Text>
+              <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
+                Não tem uma conta?{' '}
+              </Text>
+              <Link href="/(auth)/register">
+                <Text style={[styles.link, { color: colors.primary }]}>Cadastre-se</Text>
               </Link>
             </View>
           </View>
@@ -90,7 +104,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   keyboardView: {
     flex: 1,
@@ -98,39 +111,35 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: spacing.xl * 2,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
   },
   form: {
     width: '100%',
   },
   button: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   footerText: {
-    color: '#6b7280',
     fontSize: 14,
   },
   link: {
-    color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
   },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import {
   TextInput,
   View,
@@ -7,86 +7,163 @@ import {
   TextInputProps,
   TouchableOpacity,
 } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
+import { useColors } from '@/theme';
+import { borderRadius, spacing, iconSizes } from '@/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   isPassword?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  hint?: string;
 }
 
 export function Input({
   label,
   error,
   isPassword = false,
+  leftIcon,
+  rightIcon,
+  hint,
   style,
   ...props
 }: InputProps) {
+  const colors = useColors();
   const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const getBorderColor = () => {
+    if (error) return colors.error;
+    if (isFocused) return colors.primary;
+    return colors.border;
+  };
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <View style={styles.inputContainer}>
+      {label && (
+        <Text style={[styles.label, { color: colors.foreground }]}>
+          {label}
+        </Text>
+      )}
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: colors.input,
+            borderColor: getBorderColor(),
+          },
+          isFocused ? styles.inputFocused : undefined,
+        ]}
+      >
+        {leftIcon && (
+          <View style={styles.leftIcon}>
+            {leftIcon}
+          </View>
+        )}
         <TextInput
-          style={[styles.input, error && styles.inputError, style]}
-          placeholderTextColor="#9ca3af"
+          style={[
+            styles.input,
+            { color: colors.foreground },
+            leftIcon ? styles.inputWithLeftIcon : undefined,
+            (isPassword || rightIcon) ? styles.inputWithRightIcon : undefined,
+            style,
+          ]}
+          placeholderTextColor={colors.mutedForeground}
           secureTextEntry={isPassword && !showPassword}
+          onFocus={(e) => {
+            setIsFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            props.onBlur?.(e);
+          }}
           {...props}
         />
         {isPassword && (
           <TouchableOpacity
             style={styles.eyeButton}
             onPress={() => setShowPassword(!showPassword)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.eyeText}>{showPassword ? 'Ocultar' : 'Mostrar'}</Text>
+            {showPassword ? (
+              <EyeOff size={iconSizes.md} color={colors.mutedForeground} />
+            ) : (
+              <Eye size={iconSizes.md} color={colors.mutedForeground} />
+            )}
           </TouchableOpacity>
         )}
+        {rightIcon && !isPassword && (
+          <View style={styles.rightIcon}>
+            {rightIcon}
+          </View>
+        )}
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && (
+        <Text style={[styles.error, { color: colors.error }]}>
+          {error}
+        </Text>
+      )}
+      {hint && !error && (
+        <Text style={[styles.hint, { color: colors.mutedForeground }]}>
+          {hint}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 6,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
   },
   inputContainer: {
-    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+  inputFocused: {
+    borderWidth: 2,
   },
   input: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     fontSize: 16,
-    color: '#1f2937',
+    fontWeight: '500',
   },
-  inputError: {
-    borderColor: '#ef4444',
+  inputWithLeftIcon: {
+    paddingLeft: spacing.sm,
   },
-  error: {
-    color: '#ef4444',
-    fontSize: 12,
-    marginTop: 4,
+  inputWithRightIcon: {
+    paddingRight: spacing.sm,
+  },
+  leftIcon: {
+    paddingLeft: spacing.lg,
+  },
+  rightIcon: {
+    paddingRight: spacing.lg,
   },
   eyeButton: {
-    position: 'absolute',
-    right: 12,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
+    paddingRight: spacing.lg,
+    paddingLeft: spacing.sm,
   },
-  eyeText: {
-    color: '#6366f1',
-    fontSize: 14,
+  error: {
+    fontSize: 12,
+    marginTop: spacing.xs,
+    fontWeight: '500',
+  },
+  hint: {
+    fontSize: 12,
+    marginTop: spacing.xs,
   },
 });

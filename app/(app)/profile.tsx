@@ -1,124 +1,321 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Button } from '../../src/components';
-import { useAuthStore } from '../../src/stores';
-import { useLogout } from '../../src/hooks';
-import { getErrorMessage } from '../../src/services';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Switch, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+import {
+  User,
+  Moon,
+  Sun,
+  Bell,
+  Shield,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Heart,
+  List,
+  Globe,
+} from 'lucide-react-native';
+import { useAuthStore } from '@/stores';
+import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
+import { ScreenContainer, Header } from '@/components/layout';
+import { Avatar, Card } from '@/components/ui';
+import { useFavoritesStats, useDashboardStats } from '@/hooks';
+
+interface MenuItemProps {
+  icon: any;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  showArrow?: boolean;
+  rightElement?: React.ReactNode;
+  destructive?: boolean;
+}
 
 export default function ProfileScreen() {
+  const colors = useColors();
+  const { mode, toggleTheme } = useTheme();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const logoutMutation = useLogout();
+  const logout = useAuthStore((state) => state.logout);
 
-  const handleLogout = async () => {
-    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logoutMutation.mutateAsync();
-            router.replace('/(auth)/login');
-          } catch (error) {
-            Alert.alert('Erro', getErrorMessage(error));
-          }
-        },
-      },
-    ]);
-  };
+  const { data: favStats } = useFavoritesStats();
+  const { data: dashStats } = useDashboardStats();
+
+  const handleLogout = useCallback(async () => {
+    const doLogout = async () => {
+      await logout();
+      router.replace('/login');
+    };
+
+    if (Platform.OS === 'web') {
+      // Use browser confirm on web
+      if (window.confirm('Tem certeza que deseja sair da sua conta?')) {
+        doLogout();
+      }
+    } else {
+      // Use native Alert on mobile
+      Alert.alert(
+        'Sair',
+        'Tem certeza que deseja sair da sua conta?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Sair',
+            style: 'destructive',
+            onPress: doLogout,
+          },
+        ]
+      );
+    }
+  }, [logout, router]);
+
+  const styles = StyleSheet.create({
+    scrollContent: {
+      paddingBottom: spacing.xl * 2,
+    },
+    profileSection: {
+      alignItems: 'center',
+      padding: spacing.xl,
+    },
+    userName: {
+      ...typography.title,
+      color: colors.foreground,
+      marginTop: spacing.md,
+    },
+    userEmail: {
+      ...typography.body,
+      color: colors.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      marginTop: spacing.lg,
+      gap: spacing.md,
+    },
+    statItem: {
+      alignItems: 'center',
+      padding: spacing.md,
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      minWidth: 80,
+    },
+    statValue: {
+      ...typography.header,
+      color: colors.foreground,
+    },
+    statLabel: {
+      ...typography.small,
+      color: colors.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    section: {
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.lg,
+    },
+    sectionTitle: {
+      ...typography.label,
+      color: colors.mutedForeground,
+      marginBottom: spacing.sm,
+      paddingLeft: spacing.sm,
+    },
+    menuCard: {
+      padding: 0,
+      overflow: 'hidden',
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.cardBorder,
+    },
+    menuItemLast: {
+      borderBottomWidth: 0,
+    },
+    menuIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.muted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    menuContent: {
+      flex: 1,
+    },
+    menuLabel: {
+      ...typography.body,
+      color: colors.foreground,
+    },
+    menuLabelDestructive: {
+      color: colors.error,
+    },
+    menuValue: {
+      ...typography.label,
+      color: colors.mutedForeground,
+    },
+    menuRight: {
+      marginLeft: spacing.sm,
+    },
+    versionText: {
+      ...typography.small,
+      color: colors.mutedForeground,
+      textAlign: 'center',
+      marginTop: spacing.xl,
+    },
+  });
+
+  const MenuItem = ({
+    icon: Icon,
+    label,
+    value,
+    onPress,
+    showArrow = true,
+    rightElement,
+    destructive = false,
+  }: MenuItemProps) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.menuItem,
+        { opacity: pressed && onPress ? 0.7 : 1 },
+      ]}
+      onPress={onPress}
+      disabled={!onPress && !rightElement}
+    >
+      <View
+        style={[
+          styles.menuIcon,
+          destructive && { backgroundColor: colors.error + '20' },
+        ]}
+      >
+        <Icon size={20} color={destructive ? colors.error : colors.foreground} />
+      </View>
+      <View style={styles.menuContent}>
+        <Text
+          style={[
+            styles.menuLabel,
+            destructive ? styles.menuLabelDestructive : undefined,
+          ]}
+        >
+          {label}
+        </Text>
+        {value && <Text style={styles.menuValue}>{value}</Text>}
+      </View>
+      <View style={styles.menuRight}>
+        {rightElement || (showArrow && onPress && (
+          <ChevronRight size={20} color={colors.mutedForeground} />
+        ))}
+      </View>
+    </Pressable>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.content}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
-          </Text>
-        </View>
+    <ScreenContainer>
+      <Header title="Perfil" icon={User} />
 
-        <Text style={styles.name}>{user?.name || 'Usuário'}</Text>
-        <Text style={styles.email}>{user?.email || 'email@exemplo.com'}</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <Avatar name={user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'U'} size={80} />
+          <Text style={styles.userName}>{user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'Usuário'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
 
-        <View style={styles.infoSection}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>ID</Text>
-            <Text style={styles.infoValue}>{user?.id || '-'}</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{favStats?.total || 0}</Text>
+              <Text style={styles.statLabel}>Favoritos</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{dashStats?.totalChannels || 0}</Text>
+              <Text style={styles.statLabel}>Canais</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{dashStats?.totalMovies || 0}</Text>
+              <Text style={styles.statLabel}>Filmes</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.actions}>
-          <Button
-            title="Sair da conta"
-            onPress={handleLogout}
-            variant="outline"
-            loading={logoutMutation.isPending}
-          />
+        {/* Content Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>CONTEÚDO</Text>
+          <Card style={styles.menuCard}>
+            <MenuItem
+              icon={Heart}
+              label="Favoritos"
+              value={`${favStats?.total || 0} itens`}
+              onPress={() => router.push('/favorites')}
+            />
+            <MenuItem
+              icon={List}
+              label="Playlists"
+              onPress={() => router.push('/playlists')}
+            />
+          </Card>
         </View>
-      </View>
-    </SafeAreaView>
+
+        {/* Preferences Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>PREFERÊNCIAS</Text>
+          <Card style={styles.menuCard}>
+            <MenuItem
+              icon={mode === 'dark' ? Moon : Sun}
+              label="Tema escuro"
+              showArrow={false}
+              rightElement={
+                <Switch
+                  value={mode === 'dark'}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: colors.muted, true: colors.primary }}
+                  thumbColor={colors.foreground}
+                />
+              }
+            />
+            <MenuItem
+              icon={Bell}
+              label="Notificações"
+              onPress={() => router.push('/settings')}
+            />
+            <MenuItem
+              icon={Globe}
+              label="Idioma"
+              value="Português"
+              onPress={() => router.push('/settings')}
+            />
+          </Card>
+        </View>
+
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>CONTA</Text>
+          <Card style={styles.menuCard}>
+            <MenuItem
+              icon={Shield}
+              label="Privacidade e segurança"
+              onPress={() => router.push('/settings')}
+            />
+            <MenuItem
+              icon={HelpCircle}
+              label="Ajuda e suporte"
+              onPress={() => {}}
+            />
+            <MenuItem
+              icon={LogOut}
+              label="Sair"
+              onPress={handleLogout}
+              destructive
+              showArrow={false}
+            />
+          </Card>
+        </View>
+
+        <Text style={styles.versionText}>
+          BestPlayer8k v1.0.0
+        </Text>
+      </ScrollView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 24,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#6366f1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 32,
-  },
-  infoSection: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 32,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  actions: {
-    width: '100%',
-  },
-});

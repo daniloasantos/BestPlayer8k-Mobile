@@ -1,29 +1,27 @@
 import { create } from 'zustand';
-import { authService, AuthResponse } from '@/services';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { authService, RegisterResponse } from '@/services';
+import type { User } from '@/types';
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  pendingVerificationEmail: string | null;
 
   // Actions
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  clearPendingVerification: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  pendingVerificationEmail: null,
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
 
@@ -31,17 +29,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const response = await authService.login({ email, password });
-      set({ user: response.user, isAuthenticated: true });
+      set({ user: response.user, isAuthenticated: true, pendingVerificationEmail: null });
     } finally {
       set({ isLoading: false });
     }
   },
 
-  register: async (name, email, password) => {
+  register: async (email, password) => {
     set({ isLoading: true });
     try {
-      const response = await authService.register({ name, email, password });
-      set({ user: response.user, isAuthenticated: true });
+      const response = await authService.register({ email, password });
+      set({ pendingVerificationEmail: email });
+      return response;
     } finally {
       set({ isLoading: false });
     }
@@ -62,8 +61,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const isAuth = await authService.isAuthenticated();
       if (isAuth) {
-        const user = await authService.getMe();
-        set({ user, isAuthenticated: true });
+        // Token exists, user is authenticated
+        // Note: User data is set during login, not fetched separately
+        set({ isAuthenticated: true });
       } else {
         set({ user: null, isAuthenticated: false });
       }
@@ -73,4 +73,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
     }
   },
+
+  clearPendingVerification: () => set({ pendingVerificationEmail: null }),
 }));
