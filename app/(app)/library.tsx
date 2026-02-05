@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Library, Film, Tv2 } from 'lucide-react-native';
-import { useColors, spacing } from '@/theme';
+import { spacing } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
-import { SegmentedControl, SearchBar, EmptyState } from '@/components/ui';
+import { SegmentedControl, SearchBar } from '@/components/ui';
 import { ContentGrid, CategoryFilter } from '@/components/content';
-import { useChannels, useCategories, useToggleFavorite } from '@/hooks';
-import type { Channel, ChannelType } from '@/types';
+import { useChannels, useCategories, useToggleFavorite, useSeries } from '@/hooks';
+import type { Channel, Series, ChannelType } from '@/types';
 
 type ContentTab = 'movies' | 'series';
 
@@ -17,7 +17,6 @@ const TABS = [
 ];
 
 export default function LibraryScreen() {
-  const colors = useColors();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ContentTab>('movies');
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,13 +24,25 @@ export default function LibraryScreen() {
 
   const channelType: ChannelType = activeTab === 'movies' ? 'MOVIE' : 'SERIES';
 
+  // Use useChannels for movies
   const {
-    data: contentData,
-    isLoading: loadingContent,
-    refetch: refetchContent,
-    isRefetching,
+    data: moviesData,
+    isLoading: loadingMovies,
+    refetch: refetchMovies,
+    isRefetching: isRefetchingMovies,
   } = useChannels({
-    type: channelType,
+    type: 'MOVIE',
+    categoryId: selectedCategory || undefined,
+    search: searchQuery || undefined,
+  });
+
+  // Use useSeries for series (grouped)
+  const {
+    data: seriesData,
+    isLoading: loadingSeries,
+    refetch: refetchSeries,
+    isRefetching: isRefetchingSeries,
+  } = useSeries({
     categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
   });
@@ -53,7 +64,7 @@ export default function LibraryScreen() {
     setSelectedCategory(categoryId);
   }, []);
 
-  const handleItemPress = useCallback((item: Channel) => {
+  const handleItemPress = useCallback((item: Channel | Series) => {
     if (activeTab === 'movies') {
       router.push(`/channels/${item.id}` as any);
     } else {
@@ -61,7 +72,7 @@ export default function LibraryScreen() {
     }
   }, [activeTab, router]);
 
-  const handleFavoritePress = useCallback((item: Channel) => {
+  const handleFavoritePress = useCallback((item: Channel | Series) => {
     toggleFavorite.mutate(item.id);
   }, [toggleFavorite]);
 
@@ -80,7 +91,13 @@ export default function LibraryScreen() {
     },
   });
 
-  const items = contentData?.items || [];
+  // Select the correct data based on active tab
+  const items = activeTab === 'movies'
+    ? (moviesData?.items || [])
+    : (seriesData?.items || []);
+  const isLoading = activeTab === 'movies' ? loadingMovies : loadingSeries;
+  const isRefreshing = activeTab === 'movies' ? isRefetchingMovies : isRefetchingSeries;
+  const refetch = activeTab === 'movies' ? refetchMovies : refetchSeries;
   const contentType = activeTab === 'movies' ? 'movie' : 'series';
 
   return (
@@ -123,9 +140,9 @@ export default function LibraryScreen() {
         data={items}
         type={contentType}
         numColumns={3}
-        isLoading={loadingContent && items.length === 0}
-        isRefreshing={isRefetching}
-        onRefresh={refetchContent}
+        isLoading={isLoading && items.length === 0}
+        isRefreshing={isRefreshing}
+        onRefresh={refetch}
         onItemPress={handleItemPress}
         onFavoritePress={handleFavoritePress}
         emptyTitle={

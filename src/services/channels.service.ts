@@ -30,22 +30,30 @@ export const channelsService = {
     };
   },
 
-  async getChannel(id: string): Promise<Channel> {
-    const response = await api.get<any>(`/channels/${id}`);
+  async getChannel(id: string, playlistId?: string): Promise<Channel> {
+    const response = await api.get<any>(`/channels/${id}`, {
+      params: playlistId ? { playlistId } : undefined,
+    });
     return transformChannel(response.data);
   },
 
-  async getCategories(type?: ChannelType): Promise<Category[]> {
+  async getCategories(type?: ChannelType, playlistId?: string): Promise<Category[]> {
+    const params: any = {};
+    if (type) params.type = type;
+    if (playlistId) params.playlistId = playlistId;
+
     const response = await api.get<Category[]>('/categories', {
-      params: type ? { type } : undefined,
+      params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
   },
 
-  async getRecentlyWatched(limit: number = 10): Promise<Channel[]> {
-    const response = await api.get<any[]>('/channels/recently-watched', {
-      params: { limit },
-    });
+  async getRecentlyWatched(limit: number = 10, type?: ChannelType, playlistId?: string): Promise<Channel[]> {
+    const params: any = { limit };
+    if (type) params.type = type;
+    if (playlistId) params.playlistId = playlistId;
+
+    const response = await api.get<any[]>('/watch-history/recent', { params });
     return (response.data || []).map(transformChannel);
   },
 
@@ -53,20 +61,22 @@ export const channelsService = {
     await api.post(`/watch-history/${channelId}`);
   },
 
-  async getDashboardStats(): Promise<DashboardStats> {
-    const response = await api.get<DashboardStats>('/stats/dashboard');
+  async getDashboardStats(playlistId?: string): Promise<DashboardStats> {
+    const response = await api.get<DashboardStats>('/stats/dashboard', {
+      params: playlistId ? { playlistId } : undefined,
+    });
     return response.data;
   },
 
-  async searchChannels(query: string, type?: ChannelType | 'ALL'): Promise<Channel[]> {
-    // Backend usa /channels com parâmetro search, não /channels/search
-    const response = await api.get<any>('/channels', {
-      params: {
-        search: query,
-        type: type === 'ALL' ? undefined : type,
-        limit: 50,
-      },
-    });
+  async searchChannels(query: string, type?: ChannelType | 'ALL', playlistId?: string): Promise<Channel[]> {
+    const params: any = {
+      search: query,
+      limit: 50,
+    };
+    if (type && type !== 'ALL') params.type = type;
+    if (playlistId) params.playlistId = playlistId;
+
+    const response = await api.get<any>('/channels', { params });
     const rawItems = response.data.data || response.data.items || [];
     return rawItems.map(transformChannel);
   },

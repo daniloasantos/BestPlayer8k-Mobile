@@ -154,6 +154,7 @@ export interface ChannelParams {
   page?: number;
   limit?: number;
   favorites?: boolean;
+  playlistId?: string;
 }
 
 export interface SearchParams {

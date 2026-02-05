@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image as RNImage } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Heart,
@@ -12,10 +12,11 @@ import {
   Star,
   Calendar,
   Tv2,
+  ListVideo,
 } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { QualityBadge, Badge, Loading, EmptyState, Card } from '@/components/ui';
-import { useChannel, useToggleFavorite } from '@/hooks';
+import { useSeriesDetail, useToggleFavorite } from '@/hooks';
 import type { Season, Episode } from '@/types';
 
 export default function SeriesScreen() {
@@ -23,13 +24,13 @@ export default function SeriesScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [expandedSeason, setExpandedSeason] = useState<string | null>(null);
+  const [expandedSeasons, setExpandedSeasons] = useState<Set<number>>(new Set([1]));
 
   const {
     data: series,
     isLoading,
     error,
-  } = useChannel(id || '');
+  } = useSeriesDetail(id || '');
 
   const toggleFavorite = useToggleFavorite();
 
@@ -38,18 +39,52 @@ export default function SeriesScreen() {
   }, [router]);
 
   const handleFavorite = useCallback(() => {
-    if (id) {
-      toggleFavorite.mutate(id);
+    // Use first episode ID for favorite
+    const firstEpisodeId = series?.seasons?.[0]?.episodes?.[0]?.id;
+    if (firstEpisodeId) {
+      toggleFavorite.mutate(firstEpisodeId);
     }
-  }, [id, toggleFavorite]);
+  }, [series, toggleFavorite]);
 
   const handleEpisodePress = useCallback((episode: Episode) => {
-    router.push(`/channels/${episode.id}` as any);
-  }, [router]);
+    // Navigate to episode player
+    router.push({
+      pathname: '/series/[id]/watch/[episodeId]',
+      params: {
+        id: id || '',
+        episodeId: episode.id,
+        episodeName: episode.name || `Episódio ${episode.number}`,
+        streamUrl: episode.streamUrl,
+        season: episode.season?.toString() || '1',
+        episodeNumber: episode.number?.toString() || '1',
+      },
+    } as any);
+  }, [router, id]);
 
-  const toggleSeason = useCallback((seasonId: string) => {
-    setExpandedSeason((prev) => (prev === seasonId ? null : seasonId));
+  const handlePlayFirst = useCallback(() => {
+    const firstEpisode = series?.seasons?.[0]?.episodes?.[0];
+    if (firstEpisode) {
+      handleEpisodePress(firstEpisode);
+    }
+  }, [series, handleEpisodePress]);
+
+  const toggleSeason = useCallback((seasonNumber: number) => {
+    setExpandedSeasons((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(seasonNumber)) {
+        newSet.delete(seasonNumber);
+      } else {
+        newSet.add(seasonNumber);
+      }
+      return newSet;
+    });
   }, []);
+
+  // Count total episodes
+  const totalEpisodes = useMemo(() => {
+    if (!series?.seasons) return 0;
+    return series.seasons.reduce((acc, season) => acc + (season.episodes?.length || 0), 0);
+  }, [series]);
 
   const styles = StyleSheet.create({
     container: {
@@ -81,6 +116,11 @@ export default function SeriesScreen() {
       width: '100%',
       aspectRatio: 16 / 9,
       backgroundColor: colors.muted,
+      overflow: 'hidden',
+    },
+    posterImage: {
+      width: '100%',
+      height: '100%',
     },
     posterPlaceholder: {
       flex: 1,
@@ -98,6 +138,7 @@ export default function SeriesScreen() {
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexWrap: 'wrap',
       gap: spacing.md,
       marginBottom: spacing.md,
     },
@@ -119,6 +160,7 @@ export default function SeriesScreen() {
       flexDirection: 'row',
       gap: spacing.xs,
       marginBottom: spacing.md,
+      flexWrap: 'wrap',
     },
     description: {
       ...typography.body,
@@ -130,6 +172,21 @@ export default function SeriesScreen() {
       flexDirection: 'row',
       gap: spacing.md,
       marginBottom: spacing.xl,
+    },
+    playButton: {
+      flex: 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      padding: spacing.md,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.lg,
+    },
+    playButtonText: {
+      ...typography.label,
+      color: '#FFFFFF',
+      fontWeight: '700',
     },
     actionButton: {
       flex: 1,
@@ -195,8 +252,8 @@ export default function SeriesScreen() {
       borderBottomColor: colors.cardBorder,
     },
     episodeNumber: {
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: borderRadius.md,
       backgroundColor: colors.muted,
       alignItems: 'center',
@@ -214,15 +271,21 @@ export default function SeriesScreen() {
     episodeName: {
       ...typography.body,
       color: colors.foreground,
+      marginBottom: 2,
+    },
+    episodeMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
     },
     episodeDuration: {
       ...typography.small,
       color: colors.mutedForeground,
     },
-    playButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+    episodePlayButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
@@ -276,29 +339,8 @@ export default function SeriesScreen() {
     );
   }
 
-  const mockSeasons: Season[] = [
-    {
-      id: '1',
-      number: 1,
-      name: 'Temporada 1',
-      episodes: [
-        { id: 'e1', number: 1, name: 'Episódio 1', duration: 45, streamUrl: '' },
-        { id: 'e2', number: 2, name: 'Episódio 2', duration: 42, streamUrl: '' },
-        { id: 'e3', number: 3, name: 'Episódio 3', duration: 48, streamUrl: '' },
-      ],
-    },
-    {
-      id: '2',
-      number: 2,
-      name: 'Temporada 2',
-      episodes: [
-        { id: 'e4', number: 1, name: 'Episódio 1', duration: 50, streamUrl: '' },
-        { id: 'e5', number: 2, name: 'Episódio 2', duration: 47, streamUrl: '' },
-      ],
-    },
-  ];
-
-  const seasons = (series as any).seasons || mockSeasons;
+  const seasons = series.seasons || [];
+  const hasEpisodes = seasons.some(s => s.episodes && s.episodes.length > 0);
 
   return (
     <View style={styles.container}>
@@ -313,27 +355,35 @@ export default function SeriesScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.posterContainer}>
-          <View style={styles.posterPlaceholder}>
-            <Tv2 size={48} color={colors.mutedForeground} />
-          </View>
+          {series.poster || series.logo ? (
+            <RNImage
+              source={{ uri: series.poster || series.logo || '' }}
+              style={styles.posterImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.posterPlaceholder}>
+              <Tv2 size={48} color={colors.mutedForeground} />
+            </View>
+          )}
         </View>
 
         <View style={styles.content}>
           <Text style={styles.title}>{series.name}</Text>
 
           <View style={styles.metaRow}>
-            {(series as any).rating && (
+            {series.rating && (
               <View style={styles.metaItem}>
                 <Star size={14} color={colors.accent} fill={colors.accent} />
                 <Text style={styles.ratingText}>
-                  {(series as any).rating.toFixed(1)}
+                  {series.rating.toFixed(1)}
                 </Text>
               </View>
             )}
-            {(series as any).year && (
+            {series.year && (
               <View style={styles.metaItem}>
                 <Calendar size={14} color={colors.mutedForeground} />
-                <Text style={styles.metaText}>{(series as any).year}</Text>
+                <Text style={styles.metaText}>{series.year}</Text>
               </View>
             )}
             {seasons.length > 0 && (
@@ -344,15 +394,28 @@ export default function SeriesScreen() {
                 </Text>
               </View>
             )}
+            {totalEpisodes > 0 && (
+              <View style={styles.metaItem}>
+                <ListVideo size={14} color={colors.mutedForeground} />
+                <Text style={styles.metaText}>
+                  {totalEpisodes} Episódio{totalEpisodes !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.badges}>
-            {(series as any).quality && (
-              <QualityBadge quality={(series as any).quality} size="md" />
+            {series.quality && (
+              <QualityBadge quality={series.quality} size="md" />
             )}
-            {(series as any).genre && (
+            {series.genre && (
               <Badge variant="secondary" size="md">
-                {(series as any).genre}
+                {series.genre}
+              </Badge>
+            )}
+            {series.category && (
+              <Badge variant="secondary" size="md">
+                {series.category}
               </Badge>
             )}
           </View>
@@ -362,6 +425,13 @@ export default function SeriesScreen() {
           )}
 
           <View style={styles.actions}>
+            {hasEpisodes && (
+              <Pressable style={styles.playButton} onPress={handlePlayFirst}>
+                <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
+                <Text style={styles.playButtonText}>Assistir S01E01</Text>
+              </Pressable>
+            )}
+
             <Pressable
               style={[
                 styles.actionButton,
@@ -374,78 +444,89 @@ export default function SeriesScreen() {
                 color={series.isFavorite ? colors.error : colors.foreground}
                 fill={series.isFavorite ? colors.error : 'transparent'}
               />
-              <Text style={styles.actionText}>
-                {series.isFavorite ? 'Favoritado' : 'Favoritar'}
-              </Text>
             </Pressable>
 
             <Pressable style={styles.actionButton}>
               <Share2 size={20} color={colors.foreground} />
-              <Text style={styles.actionText}>Compartilhar</Text>
             </Pressable>
           </View>
 
-          <View style={styles.seasonsSection}>
-            <Text style={styles.sectionTitle}>Temporadas</Text>
+          {seasons.length > 0 && (
+            <View style={styles.seasonsSection}>
+              <Text style={styles.sectionTitle}>Temporadas e Episódios</Text>
 
-            {seasons.map((season: Season) => (
-              <Card key={season.id} style={styles.seasonCard}>
-                <Pressable
-                  style={styles.seasonHeader}
-                  onPress={() => toggleSeason(season.id)}
-                >
-                  <View style={styles.seasonInfo}>
-                    <Text style={styles.seasonTitle}>
-                      {season.name || `Temporada ${season.number}`}
-                    </Text>
-                    <Text style={styles.seasonEpisodes}>
-                      {season.episodes?.length || 0} episódios
-                    </Text>
-                  </View>
-                  {expandedSeason === season.id ? (
-                    <ChevronUp size={20} color={colors.mutedForeground} />
-                  ) : (
-                    <ChevronDown size={20} color={colors.mutedForeground} />
-                  )}
-                </Pressable>
+              {seasons.map((season: Season) => (
+                <Card key={season.id} style={styles.seasonCard}>
+                  <Pressable
+                    style={styles.seasonHeader}
+                    onPress={() => toggleSeason(season.number)}
+                  >
+                    <View style={styles.seasonInfo}>
+                      <Text style={styles.seasonTitle}>
+                        {season.name || `Temporada ${season.number}`}
+                      </Text>
+                      <Text style={styles.seasonEpisodes}>
+                        {season.episodes?.length || 0} episódio{(season.episodes?.length || 0) !== 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                    {expandedSeasons.has(season.number) ? (
+                      <ChevronUp size={20} color={colors.mutedForeground} />
+                    ) : (
+                      <ChevronDown size={20} color={colors.mutedForeground} />
+                    )}
+                  </Pressable>
 
-                {expandedSeason === season.id && season.episodes && (
-                  <View style={styles.episodesList}>
-                    {season.episodes.map((episode: Episode) => (
-                      <Pressable
-                        key={episode.id}
-                        style={styles.episodeItem}
-                        onPress={() => handleEpisodePress(episode)}
-                      >
-                        <View style={styles.episodeNumber}>
-                          <Text style={styles.episodeNumberText}>
-                            {episode.number}
-                          </Text>
-                        </View>
-                        <View style={styles.episodeInfo}>
-                          <Text style={styles.episodeName}>
-                            {episode.name || `Episódio ${episode.number}`}
-                          </Text>
-                          {episode.duration && (
-                            <Text style={styles.episodeDuration}>
-                              {episode.duration} min
+                  {expandedSeasons.has(season.number) && season.episodes && (
+                    <View style={styles.episodesList}>
+                      {season.episodes.map((episode: Episode) => (
+                        <Pressable
+                          key={episode.id}
+                          style={styles.episodeItem}
+                          onPress={() => handleEpisodePress(episode)}
+                        >
+                          <View style={styles.episodeNumber}>
+                            <Text style={styles.episodeNumberText}>
+                              {episode.number}
                             </Text>
-                          )}
-                        </View>
-                        <View style={styles.playButton}>
-                          <Play
-                            size={16}
-                            color={colors.foreground}
-                            fill={colors.foreground}
-                          />
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-              </Card>
-            ))}
-          </View>
+                          </View>
+                          <View style={styles.episodeInfo}>
+                            <Text style={styles.episodeName} numberOfLines={1}>
+                              {episode.name || `Episódio ${episode.number}`}
+                            </Text>
+                            <View style={styles.episodeMeta}>
+                              {episode.quality && (
+                                <QualityBadge quality={episode.quality} size="sm" />
+                              )}
+                              {episode.duration && (
+                                <Text style={styles.episodeDuration}>
+                                  {episode.duration} min
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                          <View style={styles.episodePlayButton}>
+                            <Play
+                              size={16}
+                              color="#FFFFFF"
+                              fill="#FFFFFF"
+                            />
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </Card>
+              ))}
+            </View>
+          )}
+
+          {!hasEpisodes && (
+            <EmptyState
+              icon={ListVideo}
+              title="Nenhum episódio disponível"
+              description="Esta série ainda não possui episódios cadastrados."
+            />
+          )}
         </View>
 
         <View style={{ height: spacing.xl * 2 }} />

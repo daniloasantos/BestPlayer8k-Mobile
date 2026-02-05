@@ -11,6 +11,7 @@ export {
 } from './useChannels';
 
 export {
+  useActivePlaylist,
   useFavorites,
   useFavoritesStats,
   useToggleFavorite,
@@ -24,5 +25,12 @@ export {
   useSetActivePlaylist,
   useRefreshPlaylist,
 } from './usePlaylists';
+
+export {
+  useSeries,
+  useSeriesDetail,
+  useSeriesCategories,
+  useMarkEpisodeAsWatched,
+} from './useSeries';
 
 export { useAndroidNavigationBar } from './useAndroidNavigationBar';

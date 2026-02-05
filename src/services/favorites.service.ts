@@ -17,23 +17,25 @@ const transformChannel = (item: any): Channel => ({
 });
 
 export const favoritesService = {
-  async getFavorites(): Promise<Channel[]> {
-    const response = await api.get<any[]>('/favorites');
+  async getFavorites(playlistId?: string): Promise<Channel[]> {
+    const params = playlistId ? { playlistId } : {};
+    const response = await api.get<any[]>('/favorites', { params });
     return (response.data || []).map(transformChannel);
   },
 
-  async toggleFavorite(channelId: string): Promise<{ isFavorite: boolean }> {
-    const response = await api.post<any>('/favorites/toggle', { channelId });
+  async toggleFavorite(channelId: string, playlistId?: string): Promise<{ isFavorite: boolean }> {
+    const response = await api.post<any>('/favorites/toggle', { channelId, playlistId });
     // Backend retorna { message: 'Channel added/removed to favorites' }
     const isAdded = response.data.message?.includes('added');
     return { isFavorite: isAdded };
   },
 
-  async addFavorite(channelId: string): Promise<void> {
-    await api.post(`/favorites/${channelId}`);
+  async addFavorite(channelId: string, playlistId?: string): Promise<void> {
+    await api.post(`/favorites/${channelId}`, { playlistId });
   },
 
-  async removeFavorite(channelId: string): Promise<void> {
-    await api.delete(`/favorites/${channelId}`);
+  async removeFavorite(channelId: string, playlistId?: string): Promise<void> {
+    const params = playlistId ? { playlistId } : {};
+    await api.delete(`/favorites/${channelId}`, { params });
   },
 };

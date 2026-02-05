@@ -12,6 +12,7 @@ import {
   useDashboardStats,
   useFavorites,
   useChannels,
+  useSeries,
   useToggleFavorite,
 } from '@/hooks';
 import type { Channel } from '@/types';
@@ -59,10 +60,10 @@ export default function HomeScreen() {
   } = useChannels({ type: 'MOVIE', limit: 10 });
 
   const {
-    data: series,
+    data: seriesData,
     isLoading: loadingSeries,
     refetch: refetchSeries,
-  } = useChannels({ type: 'SERIES', limit: 10 });
+  } = useSeries({ limit: 10 });
 
   const toggleFavorite = useToggleFavorite();
 
@@ -369,7 +370,7 @@ export default function HomeScreen() {
         </Section>
 
         {/* Series */}
-        {series?.items && series.items.length > 0 && (
+        {seriesData?.items && seriesData.items.length > 0 && (
           <Section
             title="Séries"
             icon={Tv2}
@@ -377,7 +378,7 @@ export default function HomeScreen() {
             onActionPress={() => router.push('/library')}
           >
             <HorizontalList
-              data={series.items}
+              data={seriesData.items}
               type="series"
               isLoading={loadingSeries}
               onItemPress={(item) => router.push(`/series/${item.id}` as any)}
