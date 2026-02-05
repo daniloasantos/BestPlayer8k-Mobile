@@ -143,23 +143,20 @@ export function VideoPlayer({
     };
   }, []);
 
-  const hideControlsAfterDelay = useCallback(() => {
-    if (controlsTimeout.current) {
-      clearTimeout(controlsTimeout.current);
-    }
-
-    if (isPlaying) {
+  // Auto-hide controls effect
+  useEffect(() => {
+    if (showControls && isPlaying) {
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
       controlsTimeout.current = setTimeout(() => {
         setShowControls(false);
-      }, 3000);
+      }, 4000);
+    } else {
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
     }
-  }, [isPlaying]);
+  }, [showControls, isPlaying]);
 
   const handleTouchScreen = () => {
     setShowControls((prev) => !prev);
-    if (!showControls) {
-      hideControlsAfterDelay();
-    }
   };
 
   const handlePlayPause = async () => {
@@ -169,7 +166,6 @@ export function VideoPlayer({
       await videoRef.current.pauseAsync();
     } else {
       await videoRef.current.playAsync();
-      hideControlsAfterDelay();
     }
   };
 

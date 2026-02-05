@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Heart, Tv, Film, Tv2 } from 'lucide-react-native';
 import { useColors, spacing, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
@@ -29,6 +29,13 @@ export default function FavoritesScreen() {
     refetch,
     isRefetching,
   } = useFavorites();
+
+  // Refetch favorites when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const {
     data: stats,
@@ -92,8 +99,10 @@ export default function FavoritesScreen() {
         return 'movie';
       case 'SERIES':
         return 'series';
-      default:
+      case 'LIVE':
         return 'channel';
+      default:
+        return 'mixed';
     }
   };
 

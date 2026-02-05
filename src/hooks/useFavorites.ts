@@ -3,9 +3,13 @@ import { useMemo } from 'react';
 import { favoritesService } from '@/services';
 import type { FavoritesStats } from '@/types';
 
+import { useAuthStore } from '@/stores';
+
 export function useFavorites() {
+  const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
+
   return useQuery({
-    queryKey: ['favorites'],
+    queryKey: ['favorites', selectedProfileId],
     queryFn: () => favoritesService.getFavorites(),
   });
 }

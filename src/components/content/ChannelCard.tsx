@@ -94,6 +94,8 @@ export function ChannelCard({
       borderColor: channel.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
+      zIndex: 10,
+      elevation: 5,
     },
     content: {
       padding: spacing.sm,

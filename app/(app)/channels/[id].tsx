@@ -150,10 +150,7 @@ export default function ChannelScreen() {
     actions: {
       flexDirection: 'row',
       gap: spacing.md,
-      marginTop: spacing.lg,
-      paddingTop: spacing.lg,
-      borderTopWidth: 1,
-      borderTopColor: colors.cardBorder,
+      marginBottom: spacing.md,
     },
     actionButton: {
       flex: 1,
@@ -291,14 +288,6 @@ export default function ChannelScreen() {
             )}
           </View>
 
-          {channel.category && (
-            <Text style={styles.category}>{channel.category}</Text>
-          )}
-
-          {channel.description && (
-            <Text style={styles.description}>{channel.description}</Text>
-          )}
-
           <View style={styles.actions}>
             <Pressable
               style={[
@@ -322,6 +311,16 @@ export default function ChannelScreen() {
               <Text style={styles.actionText}>Compartilhar</Text>
             </Pressable>
           </View>
+
+          {channel.category && (
+            <Text style={styles.category}>{channel.category}</Text>
+          )}
+
+          {channel.description && (
+            <Text style={styles.description}>{channel.description}</Text>
+          )}
+
+
         </View>
 
         {/* Related Content */}

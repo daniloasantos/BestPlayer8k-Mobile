@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, ThemeColors, ThemeMode } from './colors';
+import { useAuthStore } from '@/stores';
 
 const THEME_STORAGE_KEY = 'app_theme';
 
@@ -25,10 +26,24 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeMode>('dark'); // Default to dark
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
+  const getCurrentProfile = useAuthStore((state) => state.getCurrentProfile);
+
   // Load saved theme on mount
   useEffect(() => {
     loadTheme();
   }, []);
+
+  // Sync theme with selected profile
+  useEffect(() => {
+    const profile = getCurrentProfile();
+    if (profile?.theme && (profile.theme === 'light' || profile.theme === 'dark')) {
+      if (profile.theme !== theme) {
+        setThemeState(profile.theme);
+        AsyncStorage.setItem(THEME_STORAGE_KEY, profile.theme).catch(() => { });
+      }
+    }
+  }, [selectedProfileId, getCurrentProfile]); // Removido 'theme' para evitar ciclos desnecessários, mas setamos themeState.
 
   const loadTheme = async () => {
     try {

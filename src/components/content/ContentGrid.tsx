@@ -14,7 +14,7 @@ import { MovieCard } from './MovieCard';
 import { SeriesCard } from './SeriesCard';
 import type { Channel, Movie, Series } from '@/types';
 
-type ContentType = 'channel' | 'movie' | 'series';
+type ContentType = 'channel' | 'movie' | 'series' | 'mixed';
 type ContentItem = Channel | Movie | Series;
 
 interface ContentGridProps<T extends ContentItem> {
@@ -116,7 +116,15 @@ export function ContentGrid<T extends ContentItem>({
     const handlePress = () => onItemPress?.(item);
     const handleFavorite = () => onFavoritePress?.(item);
 
-    switch (type) {
+    let itemType = type;
+    if (type === 'mixed' && 'type' in item) {
+      const channelType = (item as Channel).type;
+      if (channelType === 'MOVIE') itemType = 'movie';
+      else if (channelType === 'SERIES') itemType = 'series';
+      else itemType = 'channel';
+    }
+
+    switch (itemType) {
       case 'channel':
         return (
           <View style={styles.itemContainer}>

@@ -14,6 +14,7 @@ export interface Profile {
   name: string;
   avatar: string | null;
   isPrimary: boolean;
+  theme?: 'light' | 'dark';
 }
 
 // Content types

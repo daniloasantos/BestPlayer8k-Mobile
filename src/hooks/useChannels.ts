@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { channelsService } from '@/services';
 import type { ChannelParams, ChannelType } from '@/types';
+import { useAuthStore } from '@/stores';
 
 export function useChannels(params?: ChannelParams) {
   return useQuery({
@@ -25,15 +26,17 @@ export function useCategories(type?: ChannelType) {
 }
 
 export function useRecentlyWatched(limit: number = 10) {
+  const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
   return useQuery({
-    queryKey: ['recently-watched', limit],
+    queryKey: ['recently-watched', limit, selectedProfileId],
     queryFn: () => channelsService.getRecentlyWatched(limit),
   });
 }
 
 export function useDashboardStats() {
+  const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
   return useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', selectedProfileId],
     queryFn: () => channelsService.getDashboardStats(),
   });
 }
