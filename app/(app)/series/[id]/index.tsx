@@ -39,10 +39,8 @@ export default function SeriesScreen() {
   }, [router]);
 
   const handleFavorite = useCallback(() => {
-    // Use first episode ID for favorite
-    const firstEpisodeId = series?.seasons?.[0]?.episodes?.[0]?.id;
-    if (firstEpisodeId) {
-      toggleFavorite.mutate(firstEpisodeId);
+    if (series?.id) {
+      toggleFavorite.mutate(series.id);
     }
   }, [series, toggleFavorite]);
 
