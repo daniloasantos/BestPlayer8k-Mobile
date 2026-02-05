@@ -1,6 +1,6 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import {
   Heart,
   Share2,
@@ -15,12 +15,25 @@ import { VideoPlayer } from '@/components/player';
 import { QualityBadge, Badge, Button, Loading, EmptyState } from '@/components/ui';
 import { HorizontalList } from '@/components/content';
 import { useChannel, useChannels, useMarkAsWatched, useToggleFavorite } from '@/hooks';
+import { useFloatingPlayer } from '@/contexts';
 import type { Channel } from '@/types';
 
 export default function ChannelScreen() {
   const colors = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { setChannel: setFloatingChannel, minimize, stop: stopFloatingPlayer, maximize } = useFloatingPlayer();
+  const [isActive, setIsActive] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsActive(true);
+      return () => {
+        setIsActive(false);
+        setFloatingChannel(null);
+      };
+    }, [setFloatingChannel])
+  );
 
   const {
     data: channel,
@@ -40,6 +53,12 @@ export default function ChannelScreen() {
     limit: 10,
   });
 
+  // Close floating player when opening a new full player
+  useEffect(() => {
+    stopFloatingPlayer();
+    maximize();
+  }, [id, stopFloatingPlayer, maximize]);
+
   useEffect(() => {
     if (id) {
       markAsWatched.mutate(id);
@@ -47,8 +66,10 @@ export default function ChannelScreen() {
   }, [id]);
 
   const handleBack = useCallback(() => {
+    // Stop floating player to ensure no background playback
+    setFloatingChannel(null);
     router.back();
-  }, [router]);
+  }, [setFloatingChannel, router]);
 
   const handleFavorite = useCallback(() => {
     if (id) {
@@ -219,20 +240,37 @@ export default function ChannelScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Video Player */}
-      <VideoPlayer
-        uri={channel.streamUrl}
-        title={channel.name}
-        poster={channel.logo || undefined}
-        onBack={handleBack}
-      />
-
-      {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header with Title and Back Button */}
+        <View style={{
+          padding: spacing.md,
+          paddingTop: spacing.xl + spacing.sm,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm
+        }}>
+          <Pressable onPress={handleBack} hitSlop={16}>
+            <ChevronLeft size={28} color={colors.foreground} />
+          </Pressable>
+          <Text style={[styles.title, { marginBottom: 0, flex: 1 }]} numberOfLines={2}>
+            {channel.name}
+          </Text>
+        </View>
+
+        {/* Video Player */}
+        {isActive ? (
+          <VideoPlayer
+            uri={channel.streamUrl}
+            title={channel.name}
+            poster={channel.logo || undefined}
+            onBack={handleBack}
+          />
+        ) : (
+          <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' }} />
+        )}
+
         <View style={styles.info}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>{channel.name}</Text>
-          </View>
+          {/* Title row removed from here */}
 
           <View style={styles.badges}>
             {channel.type === 'LIVE' && (

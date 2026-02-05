@@ -14,7 +14,7 @@ import type { Channel, Movie, Series } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type ContentType = 'channel' | 'movie' | 'series';
+type ContentType = 'channel' | 'movie' | 'series' | 'mixed';
 type ContentItem = Channel | Movie | Series;
 
 interface HorizontalListProps<T extends ContentItem> {
@@ -42,29 +42,36 @@ export function HorizontalList<T extends ContentItem>({
 }: HorizontalListProps<T>) {
   const colors = useColors();
 
-  const getDefaultWidth = () => {
+  const getDefaultWidth = (itemType?: string) => {
     if (compact) {
-      // Largura compacta similar à grade de 3 colunas
-      return (SCREEN_WIDTH - spacing.md * 4) / 3;
+      if (itemType === 'MOVIE' || itemType === 'SERIES' || type === 'movie' || type === 'series') {
+        return (SCREEN_WIDTH - spacing.md * 4) / 3;
+      }
+      return (SCREEN_WIDTH - spacing.md * 4) / 2.5; // Channel width slightly larger
     }
-    switch (type) {
+
+    // Non-compact widths
+    const effectiveType = itemType || type;
+    switch (effectiveType) {
       case 'channel':
+      case 'LIVE':
         return SCREEN_WIDTH * 0.5;
       case 'movie':
       case 'series':
+      case 'MOVIE':
+      case 'SERIES':
         return SCREEN_WIDTH * 0.32;
       default:
         return SCREEN_WIDTH * 0.35;
     }
   };
 
-  const width = itemWidth || getDefaultWidth();
-
   const getMinHeight = () => {
-    if (compact) {
-      return type === 'channel' ? 140 : 200;
+    // For mixed or movie/series, we need more height
+    if (type === 'mixed' || type === 'movie' || type === 'series') {
+      return compact ? 200 : 280;
     }
-    return type === 'channel' ? 180 : 280;
+    return compact ? 140 : 180;
   };
 
   const styles = StyleSheet.create({
@@ -74,21 +81,17 @@ export function HorizontalList<T extends ContentItem>({
     contentContainer: {
       paddingHorizontal: spacing.sm,
       gap: spacing.sm,
+      alignItems: 'flex-start', // Align items to top
     },
-    itemContainer: {
-      width,
-    },
+    // Removed fixed width itemContainer/skeletonItem from styles as it will be dynamic
     skeletonContainer: {
       flexDirection: 'row',
       paddingHorizontal: spacing.sm,
       gap: spacing.sm,
     },
-    skeletonItem: {
-      width,
-    },
     skeletonImage: {
       width: '100%',
-      aspectRatio: type === 'channel' ? 4 / 3 : 2 / 3,
+      aspectRatio: type === 'channel' ? 4 / 3 : 2 / 3, // Default aspect
       borderRadius: borderRadius.lg,
       marginBottom: spacing.xs,
     },
@@ -109,35 +112,53 @@ export function HorizontalList<T extends ContentItem>({
     const handlePress = () => onItemPress?.(item);
     const handleFavorite = () => onFavoritePress?.(item);
 
-    switch (type) {
+    // Determine type for this specific item if mixed
+    let itemType = type;
+    if (type === 'mixed' && 'type' in item) {
+      const channelType = (item as Channel).type;
+      if (channelType === 'MOVIE') itemType = 'movie';
+      else if (channelType === 'SERIES') itemType = 'series';
+      else itemType = 'channel';
+    }
+
+    // Dynamic width based on specific item type
+    const currentWidth = itemWidth || getDefaultWidth(
+      'type' in item ? (item as Channel).type : undefined
+    );
+
+    const itemStyle = { width: currentWidth };
+
+    switch (itemType) {
       case 'channel':
         return (
-          <View style={styles.itemContainer}>
+          <View style={itemStyle}>
             <ChannelCard
               channel={item as Channel}
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
               compact={compact}
+              width={currentWidth}
             />
           </View>
         );
       case 'movie':
         return (
-          <View style={styles.itemContainer}>
+          <View style={itemStyle}>
             <MovieCard
-              movie={item as Movie}
+              movie={item as Movie | Channel}
               onPress={handlePress}
               onFavoritePress={handleFavorite}
               showFavorite={showFavorite}
               showInfo={showInfo}
               compact={compact}
+              width={currentWidth}
             />
           </View>
         );
       case 'series':
         return (
-          <View style={styles.itemContainer}>
+          <View style={itemStyle}>
             <SeriesCard
               series={item as Series}
               onPress={handlePress}
@@ -145,6 +166,7 @@ export function HorizontalList<T extends ContentItem>({
               showFavorite={showFavorite}
               showInfo={showInfo}
               compact={compact}
+              width={currentWidth}
             />
           </View>
         );
@@ -153,17 +175,22 @@ export function HorizontalList<T extends ContentItem>({
     }
   };
 
-  const renderLoadingSkeleton = () => (
-    <View style={styles.skeletonContainer}>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <View key={index} style={styles.skeletonItem}>
-          <Skeleton style={styles.skeletonImage} />
-          <Skeleton style={styles.skeletonText} />
-          <Skeleton style={styles.skeletonTextShort} />
-        </View>
-      ))}
-    </View>
-  );
+  const renderLoadingSkeleton = () => {
+    // Defines skeleton width based on list type (defaulting to channel if mixed, or just avg)
+    const skeletonWidth = itemWidth || getDefaultWidth(type === 'mixed' ? 'channel' : undefined);
+
+    return (
+      <View style={styles.skeletonContainer}>
+        {Array.from({ length: 4 }).map((_, index) => (
+          <View key={index} style={{ width: skeletonWidth }}>
+            <Skeleton style={styles.skeletonImage} />
+            <Skeleton style={styles.skeletonText} />
+            <Skeleton style={styles.skeletonTextShort} />
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   if (isLoading) {
     return (

@@ -60,23 +60,27 @@ export function PlayerControls({
   const styles = StyleSheet.create({
     container: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
       justifyContent: 'space-between',
+      zIndex: 10,
     },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: spacing.md,
-      paddingTop: spacing.md,
+      paddingTop: isFullscreen ? spacing.xl : spacing.md,
+      zIndex: 20,
     },
     backButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     title: {
       ...typography.body,
@@ -85,6 +89,9 @@ export function PlayerControls({
       flex: 1,
       marginHorizontal: spacing.md,
       textAlign: 'center',
+      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+      textShadowOffset: { width: -1, height: 1 },
+      textShadowRadius: 10,
     },
     topActions: {
       flexDirection: 'row',
@@ -94,9 +101,11 @@ export function PlayerControls({
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     centerControls: {
       flexDirection: 'row',

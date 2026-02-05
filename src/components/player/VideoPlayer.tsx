@@ -2,17 +2,18 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  Dimensions,
   StatusBar,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { useColors, spacing } from '@/theme';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import * as NavigationBar from 'expo-navigation-bar';
+import { useColors } from '@/theme';
+import { useFullscreen } from '@/contexts';
 import { PlayerControls } from './PlayerControls';
 import { PlayerError } from './PlayerError';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface VideoPlayerProps {
   uri: string;
@@ -30,18 +31,24 @@ export function VideoPlayer({
   title,
   poster,
   autoPlay = true,
-  isFullscreen = false,
+  isFullscreen: externalFullscreen,
   onFullscreenToggle,
   onBack,
   onError,
 }: VideoPlayerProps) {
   const colors = useColors();
   const videoRef = useRef<Video>(null);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { setFullscreen: setGlobalFullscreen } = useFullscreen();
 
+  const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Use external fullscreen state if provided, otherwise use internal
+  const isFullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
 
   const isPlaying = status?.isLoaded ? status.isPlaying : false;
   const position = status?.isLoaded ? status.positionMillis : 0;
@@ -50,22 +57,25 @@ export function VideoPlayer({
 
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Calculate player dimensions based on screen
+  const playerHeight = isFullscreen ? windowHeight : Math.floor(windowWidth * (9 / 16));
+
   const styles = StyleSheet.create({
     container: {
-      width: isFullscreen ? SCREEN_HEIGHT : SCREEN_WIDTH,
-      height: isFullscreen ? SCREEN_WIDTH : SCREEN_WIDTH * (9 / 16),
+      width: windowWidth,
+      height: playerHeight,
       backgroundColor: '#000',
-      position: 'relative',
+      position: isFullscreen ? 'absolute' : 'relative',
+      top: isFullscreen ? 0 : undefined,
+      left: isFullscreen ? 0 : undefined,
+      right: isFullscreen ? 0 : undefined,
+      bottom: isFullscreen ? 0 : undefined,
+      zIndex: isFullscreen ? 1000 : 1,
+      overflow: 'hidden',
     },
     video: {
-      width: '100%',
-      height: '100%',
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      width: windowWidth,
+      height: playerHeight,
     },
     loadingContainer: {
       ...StyleSheet.absoluteFillObject,
@@ -78,8 +88,55 @@ export function VideoPlayer({
     },
   });
 
+  // Handle orientation changes and system bars for fullscreen
+  useEffect(() => {
+    const handleFullscreenOrientation = async () => {
+      try {
+        if (isFullscreen) {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.LANDSCAPE
+          );
+          StatusBar.setHidden(true);
+          await NavigationBar.setVisibilityAsync('hidden');
+          await NavigationBar.setBehaviorAsync('overlay-swipe');
+        } else {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP
+          );
+          StatusBar.setHidden(false);
+          // Manter immersive ou restaurar conforme app.json, aqui garantimos hidden por padrão do app
+          await NavigationBar.setVisibilityAsync('hidden');
+        }
+      } catch (error) {
+        console.error('Error changing orientation:', error);
+      }
+    };
+    handleFullscreenOrientation();
+
+    return () => {
+      // Reset to portrait when component unmounts
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
+      ).catch(() => { });
+      StatusBar.setHidden(false);
+      NavigationBar.setVisibilityAsync('visible').catch(() => { });
+      NavigationBar.setBehaviorAsync('inset-swipe').catch(() => { });
+    };
+  }, [isFullscreen]);
+
+  // Sync fullscreen state with global context
+  useEffect(() => {
+    setGlobalFullscreen(isFullscreen);
+    return () => {
+      setGlobalFullscreen(false);
+    };
+  }, [isFullscreen, setGlobalFullscreen]);
+
   useEffect(() => {
     return () => {
+      if (videoRef.current) {
+        videoRef.current.unloadAsync().catch(() => { });
+      }
       if (controlsTimeout.current) {
         clearTimeout(controlsTimeout.current);
       }
@@ -133,6 +190,14 @@ export function VideoPlayer({
     await videoRef.current.setPositionAsync(newPosition);
   };
 
+  const handleFullscreenToggle = useCallback(async () => {
+    if (onFullscreenToggle) {
+      onFullscreenToggle();
+    } else {
+      setInternalFullscreen((prev) => !prev);
+    }
+  }, [onFullscreenToggle]);
+
   const handlePlaybackStatusUpdate = (playbackStatus: AVPlaybackStatus) => {
     setStatus(playbackStatus);
 
@@ -163,13 +228,21 @@ export function VideoPlayer({
     }
   };
 
+  const handleBack = useCallback(() => {
+    if (isFullscreen) {
+      handleFullscreenToggle();
+    } else {
+      onBack?.();
+    }
+  }, [isFullscreen, handleFullscreenToggle, onBack]);
+
   if (error) {
     return (
       <View style={styles.container}>
         <PlayerError
           message={error}
           onRetry={handleRetry}
-          onBack={onBack}
+          onBack={handleBack}
         />
       </View>
     );
@@ -212,8 +285,8 @@ export function VideoPlayer({
             onSeek={handleSeek}
             onSkipBack={handleSkipBack}
             onSkipForward={handleSkipForward}
-            onFullscreenToggle={onFullscreenToggle}
-            onBack={onBack}
+            onFullscreenToggle={handleFullscreenToggle}
+            onBack={handleBack}
           />
         )}
       </Pressable>

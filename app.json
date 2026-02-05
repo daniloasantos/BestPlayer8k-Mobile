@@ -25,7 +25,11 @@
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.bestplayer8k.mobile",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "androidNavigationBar": {
+        "visible": "immersive",
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -36,7 +40,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      "expo-navigation-bar"
     ],
     "experiments": {
       "typedRoutes": true

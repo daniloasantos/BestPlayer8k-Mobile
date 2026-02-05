@@ -2,10 +2,12 @@ import { Tabs } from 'expo-router';
 import { Home, Tv, Library, Heart, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../../src/theme';
+import { useFullscreen } from '../../src/contexts';
 
 export default function AppLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { isFullscreen } = useFullscreen();
 
   return (
     <Tabs
@@ -13,18 +15,18 @@ export default function AppLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        tabBarStyle: {
+        tabBarStyle: isFullscreen ? { display: 'none' } : {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: Math.max(insets.bottom, 8),
-          height: 60 + Math.max(insets.bottom, 0),
+          paddingTop: 12,
+          paddingBottom: 20 + insets.bottom,
+          height: 78 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
         },
       }}
     >

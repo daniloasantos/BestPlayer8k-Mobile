@@ -9,8 +9,15 @@ export interface CreatePlaylistData {
 
 export const playlistsService = {
   async getPlaylists(): Promise<Playlist[]> {
-    const response = await api.get<Playlist[]>('/playlist');
-    return response.data;
+    try {
+      console.log('[PlaylistsService] Fetching playlists...');
+      const response = await api.get<Playlist[]>('/playlist');
+      console.log('[PlaylistsService] Playlists response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[PlaylistsService] Error fetching playlists:', error);
+      throw error;
+    }
   },
 
   async getPlaylist(id: string): Promise<Playlist> {

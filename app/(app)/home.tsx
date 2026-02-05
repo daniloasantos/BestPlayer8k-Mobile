@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Tv, Tv2, Film, Heart, Clock, ChevronRight, Search, Bell } from 'lucide-react-native';
 import { useAuthStore } from '@/stores';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
@@ -26,6 +26,13 @@ export default function HomeScreen() {
     isLoading: loadingRecent,
     refetch: refetchRecent,
   } = useRecentlyWatched(6);
+
+  // Refetch recently watched when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      refetchRecent();
+    }, [refetchRecent])
+  );
 
   const {
     data: stats,
@@ -290,7 +297,7 @@ export default function HomeScreen() {
           ) : recentlyWatched && recentlyWatched.length > 0 ? (
             <HorizontalList
               data={recentlyWatched}
-              type="channel"
+              type="mixed"
               onItemPress={(channel) => router.push(`/channels/${channel.id}` as any)}
               onFavoritePress={handleFavoritePress}
             />

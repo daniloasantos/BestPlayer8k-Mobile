@@ -50,7 +50,7 @@ export const channelsService = {
   },
 
   async markAsWatched(channelId: string): Promise<void> {
-    await api.post(`/channels/${channelId}/watch`);
+    await api.post(`/watch-history/${channelId}`);
   },
 
   async getDashboardStats(): Promise<DashboardStats> {
