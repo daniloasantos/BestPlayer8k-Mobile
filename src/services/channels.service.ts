@@ -62,10 +62,21 @@ export const channelsService = {
   },
 
   async getDashboardStats(playlistId?: string): Promise<DashboardStats> {
-    const response = await api.get<DashboardStats>('/stats/dashboard', {
+    const response = await api.get<any>('/stats/dashboard', {
       params: playlistId ? { playlistId } : undefined,
     });
-    return response.data;
+
+    // Mapear a resposta do backend para o formato esperado pelo mobile
+    const data = response.data;
+    return {
+      totalChannels: (data.counts?.live || 0) + (data.counts?.movies || 0) + (data.counts?.series || 0),
+      totalMovies: data.counts?.movies || 0,
+      totalSeries: data.counts?.series || 0,
+      totalFavorites: 0, // TODO: implementar no backend
+      total4K: 0, // TODO: implementar no backend
+      totalFHD: 0, // TODO: implementar no backend
+      recentlyWatched: [],
+    };
   },
 
   async searchChannels(query: string, type?: ChannelType | 'ALL', playlistId?: string): Promise<Channel[]> {
