@@ -14,9 +14,11 @@ import { Button, Input } from '../../src/components';
 import { useRegister } from '../../src/hooks';
 import { getErrorMessage } from '../../src/services';
 import { useColors, spacing } from '@/theme';
+import { useLanguage } from '@/contexts';
 
 export default function RegisterScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,17 +35,17 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      showAlert('Erro', 'Preencha todos os campos');
+      showAlert(t('common.error'), t('auth.error_fill_all'));
       return;
     }
 
     if (password.length < 6) {
-      showAlert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+      showAlert(t('common.error'), t('auth.password_min_length'));
       return;
     }
 
     if (password !== confirmPassword) {
-      showAlert('Erro', 'As senhas não coincidem');
+      showAlert(t('common.error'), t('auth.passwords_not_match'));
       return;
     }
 
@@ -51,7 +53,7 @@ export default function RegisterScreen() {
       await registerMutation.mutateAsync({ email, password });
       setRegistrationSuccess(true);
     } catch (error) {
-      showAlert('Erro', getErrorMessage(error));
+      showAlert(t('common.error'), getErrorMessage(error));
     }
   };
 
@@ -61,14 +63,13 @@ export default function RegisterScreen() {
         <View style={styles.successContainer}>
           <Text style={styles.successIcon}>✉️</Text>
           <Text style={[styles.successTitle, { color: colors.foreground }]}>
-            Verifique seu e-mail
+            {t('auth.verify_email_title')}
           </Text>
           <Text style={[styles.successText, { color: colors.mutedForeground }]}>
-            Enviamos um link de verificação para {email}.
-            Clique no link para ativar sua conta.
+            {t('auth.verify_email_message', { email })}
           </Text>
           <Button
-            title="Ir para Login"
+            title={t('auth.go_to_login')}
             onPress={() => router.replace('/(auth)/login')}
             style={styles.successButton}
           />
@@ -88,15 +89,17 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.foreground }]}>Criar Conta</Text>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              {t('auth.create_account_title')}
+            </Text>
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-              Preencha seus dados
+              {t('auth.create_account_subtitle')}
             </Text>
           </View>
 
           <View style={styles.form}>
             <Input
-              label="E-mail"
+              label={t('auth.email_label')}
               placeholder="seu@email.com"
               value={email}
               onChangeText={setEmail}
@@ -106,23 +109,23 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="Senha"
-              placeholder="Mínimo 6 caracteres"
+              label={t('auth.password_label')}
+              placeholder={t('change_password.min_chars')}
               value={password}
               onChangeText={setPassword}
               isPassword
             />
 
             <Input
-              label="Confirmar Senha"
-              placeholder="Repita a senha"
+              label={t('auth.confirm_password_label')}
+              placeholder={t('auth.confirm_password_label')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               isPassword
             />
 
             <Button
-              title="Cadastrar"
+              title={t('auth.register_button')}
               onPress={handleRegister}
               loading={registerMutation.isPending}
               style={styles.button}
@@ -130,10 +133,12 @@ export default function RegisterScreen() {
 
             <View style={styles.footer}>
               <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
-                Já tem uma conta?{' '}
+                {t('auth.login_link').split('?')[0]}?{' '}
               </Text>
               <Link href="/(auth)/login">
-                <Text style={[styles.link, { color: colors.primary }]}>Fazer login</Text>
+                <Text style={[styles.link, { color: colors.primary }]}>
+                  {t('auth.login_link').split('?')[1]?.trim()}
+                </Text>
               </Link>
             </View>
           </View>

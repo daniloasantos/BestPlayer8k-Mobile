@@ -7,11 +7,13 @@ import { ScreenContainer, Header } from '@/components/layout';
 import { SearchBar, EmptyState } from '@/components/ui';
 import { ContentGrid, CategoryFilter } from '@/components/content';
 import { useChannels, useCategories, useToggleFavorite } from '@/hooks';
+import { useLanguage } from '@/contexts';
 import type { Channel, Category } from '@/types';
 
 export default function LiveScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -61,7 +63,7 @@ export default function LiveScreen() {
   return (
     <ScreenContainer scrollable={false} noPadding>
       <Header
-        title="TV ao Vivo"
+        title={t('live.screen_title')}
         icon={Tv}
         showSearch
         onSearchPress={() => router.push('/search')}
@@ -71,7 +73,7 @@ export default function LiveScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={handleSearch}
-          placeholder="Buscar canais..."
+          placeholder={t('live.search_placeholder')}
         />
       </View>
 
@@ -80,7 +82,7 @@ export default function LiveScreen() {
         selectedId={selectedCategory}
         onSelect={handleCategorySelect}
         isLoading={loadingCategories}
-        allLabel="Todos os canais"
+        allLabel={t('live.all_channels')}
       />
 
       <ContentGrid
@@ -92,11 +94,11 @@ export default function LiveScreen() {
         onRefresh={refetchChannels}
         onItemPress={handleChannelPress}
         onFavoritePress={handleFavoritePress}
-        emptyTitle="Nenhum canal encontrado"
+        emptyTitle={t('live.empty_title')}
         emptyDescription={
           searchQuery
-            ? `Nenhum canal encontrado para "${searchQuery}"`
-            : 'Não há canais disponíveis no momento.'
+            ? t('live.empty_search', { query: searchQuery })
+            : t('live.empty_description')
         }
         emptyIcon={Tv}
       />

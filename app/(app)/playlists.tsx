@@ -29,10 +29,12 @@ import {
   useRefreshPlaylist,
 } from '@/hooks';
 import type { Playlist } from '@/types';
+import { useLanguage } from '@/contexts';
 
 export default function PlaylistsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -54,7 +56,7 @@ export default function PlaylistsScreen() {
 
   const handleCreatePlaylist = useCallback(async () => {
     if (!newPlaylistName.trim() || !newPlaylistUrl.trim()) {
-      Alert.alert('Erro', 'Preencha todos os campos');
+      Alert.alert(t('common.error'), t('auth.error_fill_all'));
       return;
     }
 
@@ -67,24 +69,24 @@ export default function PlaylistsScreen() {
       setNewPlaylistName('');
       setNewPlaylistUrl('');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível criar a playlist');
+      Alert.alert(t('common.error'), t('playlists.error_create'));
     }
-  }, [newPlaylistName, newPlaylistUrl, createPlaylist]);
+  }, [newPlaylistName, newPlaylistUrl, createPlaylist, t]);
 
   const handleDeletePlaylist = useCallback((playlist: Playlist) => {
     Alert.alert(
-      'Excluir playlist',
-      `Tem certeza que deseja excluir "${playlist.name}"?`,
+      t('playlists.delete_confirm_title'),
+      t('playlists.delete_confirm_message', { name: playlist.name }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Excluir',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => deletePlaylist.mutate(playlist.id),
         },
       ]
     );
-  }, [deletePlaylist]);
+  }, [deletePlaylist, t]);
 
   const handleSetActive = useCallback((playlist: Playlist) => {
     if (!playlist.isActive) {
@@ -96,13 +98,13 @@ export default function PlaylistsScreen() {
     setRefreshingId(playlist.id);
     try {
       await refreshPlaylist.mutateAsync(playlist.id);
-      Alert.alert('Sucesso', 'Playlist atualizada com sucesso!');
+      Alert.alert(t('common.success'), t('playlists.success_updated'));
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível atualizar a playlist');
+      Alert.alert(t('common.error'), t('playlists.error_update'));
     } finally {
       setRefreshingId(null);
     }
-  }, [refreshPlaylist]);
+  }, [refreshPlaylist, t]);
 
   const styles = StyleSheet.create({
     listContent: {
@@ -211,18 +213,18 @@ export default function PlaylistsScreen() {
           <View style={styles.playlistStats}>
             {item.channelCount !== undefined && (
               <Text style={styles.statItem}>
-                {item.channelCount} canais
+                {t('playlists.channels_count_short', { count: item.channelCount })}
               </Text>
             )}
             {item.lastSync && (
               <Text style={styles.statItem}>
-                Atualizado: {new Date(item.lastSync).toLocaleDateString()}
+                {t('playlists.updated_at', { date: new Date(item.lastSync).toLocaleDateString() })}
               </Text>
             )}
           </View>
           {item.isActive && (
             <Badge variant="success" size="sm" style={styles.activeBadge}>
-              Ativa
+              {t('playlists.active_badge')}
             </Badge>
           )}
         </View>
@@ -273,7 +275,7 @@ export default function PlaylistsScreen() {
   return (
     <ScreenContainer scrollable={false} noPadding>
       <Header
-        title="Playlists"
+        title={t('playlists.screen_title')}
         icon={List}
         showBack
         onBack={() => router.back()}
@@ -300,9 +302,9 @@ export default function PlaylistsScreen() {
           isLoading ? null : (
             <EmptyState
               icon={List}
-              title="Nenhuma playlist"
-              description="Adicione uma playlist M3U para começar a assistir seus canais favoritos."
-              actionLabel="Adicionar playlist"
+              title={t('playlists.empty_title')}
+              description={t('playlists.empty_description')}
+              actionLabel={t('playlists.empty_action')}
               onAction={() => setShowCreateModal(true)}
             />
           )
@@ -325,18 +327,18 @@ export default function PlaylistsScreen() {
         onClose={() => setShowCreateModal(false)}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Nova Playlist</Text>
+          <Text style={styles.modalTitle}>{t('playlists.new_playlist')}</Text>
 
           <Input
-            label="Nome"
-            placeholder="Minha Playlist"
+            label={t('playlists.name_label')}
+            placeholder={t('playlists.name_placeholder')}
             value={newPlaylistName}
             onChangeText={setNewPlaylistName}
           />
 
           <Input
-            label="URL da playlist (M3U)"
-            placeholder="http://exemplo.com/playlist.m3u"
+            label={t('playlists.url_label')}
+            placeholder={t('playlists.url_placeholder')}
             value={newPlaylistUrl}
             onChangeText={setNewPlaylistUrl}
             autoCapitalize="none"
@@ -345,13 +347,13 @@ export default function PlaylistsScreen() {
 
           <View style={styles.modalButtons}>
             <Button
-              title="Cancelar"
+              title={t('common.cancel')}
               variant="outline"
               onPress={() => setShowCreateModal(false)}
               style={{ flex: 1 }}
             />
             <Button
-              title="Adicionar"
+              title={t('playlists.add_button')}
               onPress={handleCreatePlaylist}
               loading={createPlaylist.isPending}
               style={{ flex: 1 }}

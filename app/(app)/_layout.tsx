@@ -2,12 +2,13 @@ import { Tabs } from 'expo-router';
 import { Home, Tv, Library, Heart, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../../src/theme';
-import { useFullscreen } from '../../src/contexts';
+import { useFullscreen, useLanguage } from '../../src/contexts';
 
 export default function AppLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { isFullscreen } = useFullscreen();
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -33,35 +34,35 @@ export default function AppLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Início',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="live"
         options={{
-          title: 'TV ao Vivo',
+          title: t('tabs.live'),
           tabBarIcon: ({ color, size }) => <Tv size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Biblioteca',
+          title: t('tabs.library'),
           tabBarIcon: ({ color, size }) => <Library size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoritos',
+          title: t('tabs.favorites'),
           tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />

@@ -8,20 +8,22 @@ import { SegmentedControl, EmptyState } from '@/components/ui';
 import { ContentGrid } from '@/components/content';
 import { useFavorites, useFavoritesStats, useToggleFavorite } from '@/hooks';
 import type { Channel, ChannelType } from '@/types';
+import { useLanguage } from '@/contexts';
 
 type FavoriteFilter = 'ALL' | 'LIVE' | 'MOVIE' | 'SERIES';
-
-const FILTERS = [
-  { value: 'ALL' as FavoriteFilter, label: 'Todos' },
-  { value: 'LIVE' as FavoriteFilter, label: 'TV' },
-  { value: 'MOVIE' as FavoriteFilter, label: 'Filmes' },
-  { value: 'SERIES' as FavoriteFilter, label: 'Séries' },
-];
 
 export default function FavoritesScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<FavoriteFilter>('ALL');
+
+  const FILTERS = [
+    { value: 'ALL' as FavoriteFilter, label: t('favorites.filter_all') },
+    { value: 'LIVE' as FavoriteFilter, label: t('favorites.filter_live') },
+    { value: 'MOVIE' as FavoriteFilter, label: t('favorites.filter_movies') },
+    { value: 'SERIES' as FavoriteFilter, label: t('favorites.filter_series') },
+  ];
 
   const {
     data: favorites,
@@ -122,33 +124,33 @@ export default function FavoritesScreen() {
   const getEmptyTitle = () => {
     switch (activeFilter) {
       case 'LIVE':
-        return 'Nenhum canal favorito';
+        return t('favorites.empty_live_title');
       case 'MOVIE':
-        return 'Nenhum filme favorito';
+        return t('favorites.empty_movies_title');
       case 'SERIES':
-        return 'Nenhuma série favorita';
+        return t('favorites.empty_series_title');
       default:
-        return 'Nenhum favorito';
+        return t('favorites.empty_all_title');
     }
   };
 
   const getEmptyDescription = () => {
     switch (activeFilter) {
       case 'LIVE':
-        return 'Adicione canais aos seus favoritos para encontrá-los facilmente.';
+        return t('favorites.empty_live_description');
       case 'MOVIE':
-        return 'Adicione filmes aos seus favoritos para encontrá-los facilmente.';
+        return t('favorites.empty_movies_description');
       case 'SERIES':
-        return 'Adicione séries aos seus favoritos para encontrá-las facilmente.';
+        return t('favorites.empty_series_description');
       default:
-        return 'Adicione conteúdo aos seus favoritos tocando no ícone de coração.';
+        return t('favorites.empty_all_description');
     }
   };
 
   return (
     <ScreenContainer scrollable={false} noPadding>
       <Header
-        title="Favoritos"
+        title={t('favorites.screen_title')}
         icon={Heart}
         showSearch
         onSearchPress={() => router.push('/search')}
@@ -159,7 +161,7 @@ export default function FavoritesScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.total || 0}</Text>
-            <Text style={styles.statText}>favoritos</Text>
+            <Text style={styles.statText}>{t('favorites.stats_label')}</Text>
           </View>
           {stats.live > 0 && (
             <View style={styles.statItem}>

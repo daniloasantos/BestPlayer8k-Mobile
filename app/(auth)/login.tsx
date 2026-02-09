@@ -14,9 +14,11 @@ import { Button, Input } from '../../src/components';
 import { useLogin } from '../../src/hooks';
 import { getErrorMessage } from '../../src/services';
 import { useColors, spacing } from '@/theme';
+import { useLanguage } from '@/contexts';
 
 export default function LoginScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const loginMutation = useLogin();
@@ -31,7 +33,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert('Erro', 'Preencha todos os campos');
+      showAlert(t('common.error'), t('auth.error_fill_all'));
       return;
     }
 
@@ -39,7 +41,7 @@ export default function LoginScreen() {
       await loginMutation.mutateAsync({ email, password });
       router.replace('/(app)/home');
     } catch (error) {
-      showAlert('Erro', getErrorMessage(error));
+      showAlert(t('common.error'), getErrorMessage(error));
     }
   };
 
@@ -56,13 +58,13 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.foreground }]}>BestPlayer8k</Text>
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-              Faça login para continuar
+              {t('auth.login_title')}
             </Text>
           </View>
 
           <View style={styles.form}>
             <Input
-              label="E-mail"
+              label={t('auth.email_label')}
               placeholder="seu@email.com"
               value={email}
               onChangeText={setEmail}
@@ -72,15 +74,15 @@ export default function LoginScreen() {
             />
 
             <Input
-              label="Senha"
-              placeholder="Sua senha"
+              label={t('auth.password_label')}
+              placeholder={t('auth.password_label')}
               value={password}
               onChangeText={setPassword}
               isPassword
             />
 
             <Button
-              title="Entrar"
+              title={t('auth.login_button')}
               onPress={handleLogin}
               loading={loginMutation.isPending}
               style={styles.button}
@@ -88,10 +90,10 @@ export default function LoginScreen() {
 
             <View style={styles.footer}>
               <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
-                Não tem uma conta?{' '}
+                {t('auth.register_link').split('?')[0]}?{' '}
               </Text>
               <Link href="/(auth)/register">
-                <Text style={[styles.link, { color: colors.primary }]}>Cadastre-se</Text>
+                <Text style={[styles.link, { color: colors.primary }]}>{t('auth.register_link').split('?')[1]?.trim()}</Text>
               </Link>
             </View>
           </View>

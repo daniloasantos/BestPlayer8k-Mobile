@@ -16,10 +16,12 @@ import {
   useToggleFavorite,
 } from '@/hooks';
 import type { Channel } from '@/types';
+import { useLanguage } from '@/contexts';
 
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const user = useAuthStore((state) => state.user);
 
   const {
@@ -227,9 +229,9 @@ export default function HomeScreen() {
             <Avatar name={user?.profiles?.find(p => p.isPrimary)?.name || user?.email?.split('@')[0] || 'U'} size={40} />
             <View>
               <Text style={styles.greeting}>
-                Olá, {user?.profiles?.find(p => p.isPrimary)?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'}!
+                {t('home.greeting', { name: user?.profiles?.find(p => p.isPrimary)?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário' })}
               </Text>
-              <Text style={styles.subtitle}>Bem-vindo ao BestPlayer8k</Text>
+              <Text style={styles.subtitle}>{t('home.welcome')}</Text>
             </View>
           </View>
           <View style={styles.headerActions}>
@@ -249,11 +251,11 @@ export default function HomeScreen() {
         <View style={styles.quickActions}>
           <Pressable style={styles.quickAction} onPress={() => router.push('/live')}>
             <Tv size={20} color={colors.primary} />
-            <Text style={styles.quickActionText}>TV ao Vivo</Text>
+            <Text style={styles.quickActionText}>{t('home.quick_action_live')}</Text>
           </Pressable>
           <Pressable style={styles.quickAction} onPress={() => router.push('/library')}>
             <Film size={20} color={colors.accent} />
-            <Text style={styles.quickActionText}>Filmes</Text>
+            <Text style={styles.quickActionText}>{t('home.quick_action_movies')}</Text>
           </Pressable>
         </View>
 
@@ -263,30 +265,30 @@ export default function HomeScreen() {
             icon={Tv}
             iconColor={colors.primary}
             value={stats?.totalChannels}
-            label="Canais"
+            label={t('home.stat_channels')}
             isLoading={loadingStats}
           />
           <StatCard
             icon={Film}
             iconColor={colors.accent}
             value={stats?.totalMovies}
-            label="Filmes"
+            label={t('home.stat_movies')}
             isLoading={loadingStats}
           />
           <StatCard
             icon={Heart}
             iconColor={colors.error}
             value={stats?.totalFavorites}
-            label="Favoritos"
+            label={t('home.stat_favorites')}
             isLoading={loadingStats}
           />
         </View>
 
         {/* Recently Watched */}
         <Section
-          title="Assistidos Recentemente"
+          title={t('home.section_recent')}
           icon={Clock}
-          actionLabel="Ver todos"
+          actionLabel={t('home.action_see_all')}
           onActionPress={() => router.push('/library')}
         >
           {loadingRecent ? (
@@ -305,7 +307,7 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>
-                Nenhum canal assistido recentemente.
+                {t('home.empty_recent')}
               </Text>
             </View>
           )}
@@ -313,9 +315,9 @@ export default function HomeScreen() {
 
         {/* Live TV */}
         <Section
-          title="TV ao Vivo"
+          title={t('home.section_live')}
           icon={Tv}
-          actionLabel="Ver todos"
+          actionLabel={t('home.action_see_all')}
           onActionPress={() => router.push('/live')}
         >
           {loadingLive ? (
@@ -334,7 +336,7 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>
-                Nenhum canal ao vivo disponível.
+                {t('home.empty_live')}
               </Text>
             </View>
           )}
@@ -342,9 +344,9 @@ export default function HomeScreen() {
 
         {/* Movies */}
         <Section
-          title="Filmes"
+          title={t('home.section_movies')}
           icon={Film}
-          actionLabel="Ver todos"
+          actionLabel={t('home.action_see_all')}
           onActionPress={() => router.push('/library')}
         >
           {loadingMovies ? (
@@ -363,7 +365,7 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>
-                Nenhum filme disponível.
+                {t('home.empty_movies')}
               </Text>
             </View>
           )}
@@ -372,9 +374,9 @@ export default function HomeScreen() {
         {/* Series */}
         {seriesData?.items && seriesData.items.length > 0 && (
           <Section
-            title="Séries"
+            title={t('home.section_series')}
             icon={Tv2}
-            actionLabel="Ver todos"
+            actionLabel={t('home.action_see_all')}
             onActionPress={() => router.push('/library')}
           >
             <HorizontalList
@@ -390,9 +392,9 @@ export default function HomeScreen() {
         {/* Favorites */}
         {favorites && favorites.length > 0 && (
           <Section
-            title="Seus Favoritos"
+            title={t('home.section_favorites')}
             icon={Heart}
-            actionLabel="Ver todos"
+            actionLabel={t('home.action_see_all')}
             onActionPress={() => router.push('/favorites')}
           >
             <HorizontalList

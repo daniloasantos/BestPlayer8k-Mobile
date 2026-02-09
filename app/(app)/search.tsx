@@ -8,22 +8,24 @@ import { SearchBar, SegmentedControl, EmptyState } from '@/components/ui';
 import { ContentGrid } from '@/components/content';
 import { useSearchChannels, useToggleFavorite } from '@/hooks';
 import type { Channel, ChannelType } from '@/types';
+import { useLanguage } from '@/contexts';
 
 type SearchFilter = 'ALL' | 'LIVE' | 'MOVIE' | 'SERIES';
-
-const FILTERS = [
-  { value: 'ALL' as SearchFilter, label: 'Todos' },
-  { value: 'LIVE' as SearchFilter, label: 'TV' },
-  { value: 'MOVIE' as SearchFilter, label: 'Filmes' },
-  { value: 'SERIES' as SearchFilter, label: 'Séries' },
-];
 
 export default function SearchScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<SearchFilter>('ALL');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  const FILTERS = [
+    { value: 'ALL' as SearchFilter, label: t('search.filter_all') },
+    { value: 'LIVE' as SearchFilter, label: t('search.filter_live') },
+    { value: 'MOVIE' as SearchFilter, label: t('search.filter_movies') },
+    { value: 'SERIES' as SearchFilter, label: t('search.filter_series') },
+  ];
 
   const {
     data: searchResults,
@@ -169,7 +171,7 @@ export default function SearchScreen() {
   return (
     <ScreenContainer>
       <Header
-        title="Buscar"
+        title={t('search.screen_title')}
         icon={SearchIcon}
         showBack
         onBack={() => router.back()}
@@ -179,7 +181,7 @@ export default function SearchScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={handleSearch}
-          placeholder="Buscar canais, filmes, séries..."
+          placeholder={t('search.placeholder')}
           autoFocus
         />
       </View>
@@ -199,8 +201,8 @@ export default function SearchScreen() {
           isLoading={isLoading}
           onItemPress={handleItemPress}
           onFavoritePress={handleFavoritePress}
-          emptyTitle="Nenhum resultado"
-          emptyDescription={`Não encontramos resultados para "${searchQuery}"`}
+          emptyTitle={t('search.empty_title')}
+          emptyDescription={t('search.empty_description', { query: searchQuery })}
           emptyIcon={getEmptyIcon()}
         />
       ) : (
@@ -211,10 +213,10 @@ export default function SearchScreen() {
               <View style={styles.recentHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Clock size={18} color={colors.foreground} style={styles.recentTitleIcon} />
-                  <Text style={styles.recentTitle}>Buscas recentes</Text>
+                  <Text style={styles.recentTitle}>{t('search.recent_title')}</Text>
                 </View>
                 <Pressable onPress={clearRecentSearches}>
-                  <Text style={styles.clearButton}>Limpar</Text>
+                  <Text style={styles.clearButton}>{t('search.recent_clear')}</Text>
                 </Pressable>
               </View>
 
@@ -243,7 +245,7 @@ export default function SearchScreen() {
           <View style={styles.suggestionsContainer}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
               <TrendingUp size={18} color={colors.foreground} style={styles.recentTitleIcon} />
-              <Text style={styles.suggestionsTitle}>Em alta</Text>
+              <Text style={styles.suggestionsTitle}>{t('search.trending_title')}</Text>
             </View>
             <View style={styles.suggestionChips}>
               {['Globo', 'SBT', 'HBO', 'Netflix', 'Esportes', 'Filmes 2024'].map(

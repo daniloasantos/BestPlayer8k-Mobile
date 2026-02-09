@@ -17,6 +17,7 @@ import {
 import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
 import { Card } from '@/components/ui';
+import { useLanguage } from '@/contexts';
 
 interface SettingItemProps {
   icon: any;
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const { mode, toggleTheme } = useTheme();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [notifications, setNotifications] = React.useState(true);
   const [autoplay, setAutoplay] = React.useState(true);
@@ -124,7 +126,7 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer>
       <Header
-        title="Configurações"
+        title={t('settings.screen_title')}
         icon={SettingsIcon}
         showBack
         onBack={() => router.back()}
@@ -136,12 +138,12 @@ export default function SettingsScreen() {
       >
         {/* Appearance */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>APARÊNCIA</Text>
+          <Text style={styles.sectionTitle}>{t('settings.section_appearance')}</Text>
           <Card style={styles.menuCard}>
             <SettingItem
               icon={mode === 'dark' ? Moon : Sun}
-              label="Tema escuro"
-              description="Alterna entre modo claro e escuro"
+              label={t('settings.dark_mode')}
+              description={t('settings.dark_mode_description')}
               showArrow={false}
               rightElement={
                 <Switch
@@ -154,14 +156,14 @@ export default function SettingsScreen() {
             />
             <SettingItem
               icon={Palette}
-              label="Cor de destaque"
-              description="Roxo (padrão)"
+              label={t('settings.accent_color')}
+              description={t('settings.accent_color_value')}
               onPress={() => {}}
             />
             <SettingItem
               icon={Globe}
-              label="Idioma"
-              description="Português (Brasil)"
+              label={t('settings.language')}
+              description={t('settings.language_value')}
               onPress={() => {}}
             />
           </Card>
@@ -169,12 +171,12 @@ export default function SettingsScreen() {
 
         {/* Playback */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>REPRODUÇÃO</Text>
+          <Text style={styles.sectionTitle}>{t('settings.section_playback')}</Text>
           <Card style={styles.menuCard}>
             <SettingItem
               icon={Volume2}
-              label="Reprodução automática"
-              description="Reproduzir próximo conteúdo automaticamente"
+              label={t('settings.autoplay')}
+              description={t('settings.autoplay_description')}
               showArrow={false}
               rightElement={
                 <Switch
@@ -187,8 +189,8 @@ export default function SettingsScreen() {
             />
             <SettingItem
               icon={Wifi}
-              label="Apenas Wi-Fi"
-              description="Reproduzir apenas quando conectado ao Wi-Fi"
+              label={t('settings.wifi_only')}
+              description={t('settings.wifi_only_description')}
               showArrow={false}
               rightElement={
                 <Switch
@@ -201,8 +203,8 @@ export default function SettingsScreen() {
             />
             <SettingItem
               icon={Download}
-              label="Qualidade de streaming"
-              description="Automático"
+              label={t('settings.streaming_quality')}
+              description={t('settings.streaming_quality_value')}
               onPress={() => {}}
             />
           </Card>
@@ -210,12 +212,12 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>NOTIFICAÇÕES</Text>
+          <Text style={styles.sectionTitle}>{t('settings.section_notifications')}</Text>
           <Card style={styles.menuCard}>
             <SettingItem
               icon={Bell}
-              label="Notificações push"
-              description="Receber alertas de novos conteúdos"
+              label={t('settings.push_notifications')}
+              description={t('settings.push_notifications_description')}
               showArrow={false}
               rightElement={
                 <Switch
@@ -231,11 +233,11 @@ export default function SettingsScreen() {
 
         {/* Privacy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PRIVACIDADE</Text>
+          <Text style={styles.sectionTitle}>{t('settings.section_privacy')}</Text>
           <Card style={styles.menuCard}>
             <SettingItem
               icon={Shield}
-              label="Política de privacidade"
+              label={t('settings.privacy_policy')}
               onPress={() => {}}
             />
           </Card>

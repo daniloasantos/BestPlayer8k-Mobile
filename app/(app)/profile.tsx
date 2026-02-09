@@ -19,8 +19,9 @@ import {
 import { useAuthStore } from '@/stores';
 import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
-import { Avatar, Card, ProfileSelector } from '@/components/ui';
+import { Avatar, Card, ProfileSelector, Modal } from '@/components/ui';
 import { useFavoritesStats, useDashboardStats } from '@/hooks';
+import { useLanguage } from '@/contexts';
 
 interface MenuItemProps {
   icon: any;
@@ -41,14 +42,29 @@ export default function ProfileScreen() {
   const selectedProfileId = useAuthStore((state) => state.selectedProfileId);
   const selectProfile = useAuthStore((state) => state.selectProfile);
   const getCurrentProfile = useAuthStore((state) => state.getCurrentProfile);
+  const { language, setLanguage, t } = useLanguage();
 
   const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
 
   const currentProfile = getCurrentProfile();
   const profiles = user?.profiles || [];
 
   const { data: favStats } = useFavoritesStats();
   const { data: dashStats } = useDashboardStats();
+
+  const getLanguageLabel = () => {
+    switch (language) {
+      case 'pt':
+        return 'Português';
+      case 'en':
+        return 'English';
+      case 'es':
+        return 'Español';
+      default:
+        return 'Português';
+    }
+  };
 
   const handleLogout = useCallback(async () => {
     const doLogout = async () => {
@@ -58,18 +74,18 @@ export default function ProfileScreen() {
 
     if (Platform.OS === 'web') {
       // Use browser confirm on web
-      if (window.confirm('Tem certeza que deseja sair da sua conta?')) {
+      if (window.confirm(t('profiles.logout_confirm_message'))) {
         doLogout();
       }
     } else {
       // Use native Alert on mobile
       Alert.alert(
-        'Sair',
-        'Tem certeza que deseja sair da sua conta?',
+        t('profiles.logout_confirm_title'),
+        t('profiles.logout_confirm_message'),
         [
-          { text: 'Cancelar', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Sair',
+            text: t('sidebar.logout'),
             style: 'destructive',
             onPress: doLogout,
           },
@@ -252,7 +268,7 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer>
-      <Header title="Perfil" icon={User} />
+      <Header title={t('profiles.screen_title')} icon={User} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -284,7 +300,7 @@ export default function ProfileScreen() {
               style={styles.switchProfileButton}
               onPress={() => setShowProfileSelector(true)}
             >
-              <Text style={styles.switchProfileText}>Trocar perfil</Text>
+              <Text style={styles.switchProfileText}>{t('profiles.switch_profile')}</Text>
               <ChevronDown size={14} color={colors.primary} />
             </Pressable>
           )}
@@ -294,32 +310,32 @@ export default function ProfileScreen() {
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{favStats?.total || 0}</Text>
-              <Text style={styles.statLabel}>Favoritos</Text>
+              <Text style={styles.statLabel}>{t('profiles.stats_favorites')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{dashStats?.totalChannels || 0}</Text>
-              <Text style={styles.statLabel}>Canais</Text>
+              <Text style={styles.statLabel}>{t('profiles.stats_channels')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{dashStats?.totalMovies || 0}</Text>
-              <Text style={styles.statLabel}>Filmes</Text>
+              <Text style={styles.statLabel}>{t('profiles.stats_movies')}</Text>
             </View>
           </View>
         </View>
 
         {/* Content Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CONTEÚDO</Text>
+          <Text style={styles.sectionTitle}>{t('profiles.content_section')}</Text>
           <Card style={styles.menuCard}>
             <MenuItem
               icon={Heart}
-              label="Favoritos"
-              value={`${favStats?.total || 0} itens`}
+              label={t('sidebar.favorites')}
+              value={t('profiles.items_count', { count: favStats?.total || 0 })}
               onPress={() => router.push('/favorites')}
             />
             <MenuItem
               icon={List}
-              label="Playlists"
+              label={t('sidebar.playlists')}
               onPress={() => router.push('/playlists')}
             />
           </Card>
@@ -327,11 +343,11 @@ export default function ProfileScreen() {
 
         {/* Preferences Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PREFERÊNCIAS</Text>
+          <Text style={styles.sectionTitle}>{t('profiles.preferences_section')}</Text>
           <Card style={styles.menuCard}>
             <MenuItem
               icon={mode === 'dark' ? Moon : Sun}
-              label="Tema escuro"
+              label={t('settings.dark_mode')}
               showArrow={false}
               rightElement={
                 <Switch
@@ -344,35 +360,35 @@ export default function ProfileScreen() {
             />
             <MenuItem
               icon={Bell}
-              label="Notificações"
+              label={t('settings.notifications')}
               onPress={() => router.push('/settings')}
             />
             <MenuItem
               icon={Globe}
-              label="Idioma"
-              value="Português"
-              onPress={() => router.push('/settings')}
+              label={t('settings.language')}
+              value={getLanguageLabel()}
+              onPress={() => setShowLanguageSelector(true)}
             />
           </Card>
         </View>
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CONTA</Text>
+          <Text style={styles.sectionTitle}>{t('profiles.account_section')}</Text>
           <Card style={styles.menuCard}>
             <MenuItem
               icon={Shield}
-              label="Privacidade e segurança"
+              label={t('profiles.privacy_security')}
               onPress={() => router.push('/settings')}
             />
             <MenuItem
               icon={HelpCircle}
-              label="Ajuda e suporte"
+              label={t('profiles.help_support')}
               onPress={() => {}}
             />
             <MenuItem
               icon={LogOut}
-              label="Sair"
+              label={t('sidebar.logout')}
               onPress={handleLogout}
               destructive
               showArrow={false}
@@ -381,7 +397,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.versionText}>
-          BestPlayer8k v1.0.0
+          {t('profiles.app_version')}
         </Text>
       </ScrollView>
 
@@ -395,6 +411,90 @@ export default function ProfileScreen() {
           setShowProfileSelector(false);
         }}
       />
+
+      <Modal
+        visible={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
+        title={t('profiles.select_language')}
+        size="sm"
+      >
+        <View style={languageStyles.container}>
+          {[
+            { code: 'pt', label: 'Português', flag: '🇧🇷' },
+            { code: 'en', label: 'English', flag: '🇺🇸' },
+            { code: 'es', label: 'Español', flag: '🇪🇸' },
+          ].map((lang) => (
+            <Pressable
+              key={lang.code}
+              style={({ pressed }) => [
+                languageStyles.languageOption,
+                {
+                  backgroundColor: language === lang.code ? colors.primary : colors.card,
+                  opacity: pressed ? 0.7 : 1,
+                  borderColor: language === lang.code ? colors.primary : colors.cardBorder,
+                },
+              ]}
+              onPress={async () => {
+                await setLanguage(lang.code as any);
+                setShowLanguageSelector(false);
+              }}
+            >
+              <Text style={languageStyles.flag}>{lang.flag}</Text>
+              <Text
+                style={[
+                  languageStyles.languageLabel,
+                  {
+                    color: language === lang.code ? '#fff' : colors.foreground,
+                  },
+                ]}
+              >
+                {lang.label}
+              </Text>
+              {language === lang.code && (
+                <View style={languageStyles.checkmark}>
+                  <Text style={languageStyles.checkmarkText}>✓</Text>
+                </View>
+              )}
+            </Pressable>
+          ))}
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
+
+const languageStyles = StyleSheet.create({
+  container: {
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    gap: spacing.md,
+  },
+  flag: {
+    fontSize: 24,
+  },
+  languageLabel: {
+    ...typography.body,
+    flex: 1,
+    fontWeight: '600',
+  },
+  checkmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmarkText: {
+    color: '#6366f1',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

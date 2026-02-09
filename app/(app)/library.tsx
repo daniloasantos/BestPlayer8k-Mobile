@@ -8,19 +8,21 @@ import { SegmentedControl, SearchBar } from '@/components/ui';
 import { ContentGrid, CategoryFilter } from '@/components/content';
 import { useChannels, useCategories, useToggleFavorite, useSeries } from '@/hooks';
 import type { Channel, Series, ChannelType } from '@/types';
+import { useLanguage } from '@/contexts';
 
 type ContentTab = 'movies' | 'series';
 
-const TABS = [
-  { id: 'movies' as ContentTab, label: 'Filmes', icon: Film },
-  { id: 'series' as ContentTab, label: 'Séries', icon: Tv2 },
-];
-
 export default function LibraryScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<ContentTab>('movies');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const TABS = [
+    { id: 'movies' as ContentTab, label: t('library.tab_movies'), icon: Film },
+    { id: 'series' as ContentTab, label: t('library.tab_series'), icon: Tv2 },
+  ];
 
   const channelType: ChannelType = activeTab === 'movies' ? 'MOVIE' : 'SERIES';
 
@@ -103,7 +105,7 @@ export default function LibraryScreen() {
   return (
     <ScreenContainer scrollable={false} noPadding>
       <Header
-        title="Biblioteca"
+        title={t('library.screen_title')}
         icon={Library}
         showSearch
         onSearchPress={() => router.push('/search')}
@@ -124,7 +126,7 @@ export default function LibraryScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={handleSearch}
-          placeholder={`Buscar ${activeTab === 'movies' ? 'filmes' : 'séries'}...`}
+          placeholder={activeTab === 'movies' ? t('library.search_movies') : t('library.search_series')}
         />
       </View>
 
@@ -133,7 +135,7 @@ export default function LibraryScreen() {
         selectedId={selectedCategory}
         onSelect={handleCategorySelect}
         isLoading={loadingCategories}
-        allLabel={activeTab === 'movies' ? 'Todos os filmes' : 'Todas as séries'}
+        allLabel={activeTab === 'movies' ? t('library.all_movies') : t('library.all_series')}
       />
 
       <ContentGrid
@@ -146,12 +148,12 @@ export default function LibraryScreen() {
         onItemPress={handleItemPress}
         onFavoritePress={handleFavoritePress}
         emptyTitle={
-          activeTab === 'movies' ? 'Nenhum filme encontrado' : 'Nenhuma série encontrada'
+          activeTab === 'movies' ? t('library.empty_movies_title') : t('library.empty_series_title')
         }
         emptyDescription={
           searchQuery
-            ? `Nenhum resultado para "${searchQuery}"`
-            : `Não há ${activeTab === 'movies' ? 'filmes' : 'séries'} disponíveis no momento.`
+            ? t('library.empty_search', { query: searchQuery })
+            : (activeTab === 'movies' ? t('library.empty_movies_description') : t('library.empty_series_description'))
         }
         emptyIcon={activeTab === 'movies' ? Film : Tv2}
       />
