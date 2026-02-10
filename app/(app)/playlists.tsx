@@ -29,6 +29,7 @@ import {
   useRefreshPlaylist,
 } from '@/hooks';
 import type { Playlist } from '@/types';
+import type { SSEProgress } from '@/services/playlists.service';
 import { useLanguage } from '@/contexts';
 
 export default function PlaylistsScreen() {
@@ -53,6 +54,14 @@ export default function PlaylistsScreen() {
   const refreshPlaylist = useRefreshPlaylist();
 
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [importProgress, setImportProgress] = useState<SSEProgress | null>(null);
+  const [progressLabel, setProgressLabel] = useState<string>('');
+
+  const getPhaseText = useCallback((phase: string) => {
+    const key = `playlists.phases.${phase}`;
+    const translated = t(key);
+    return translated !== key ? translated : phase;
+  }, [t]);
 
   const handleCreatePlaylist = useCallback(async () => {
     if (!newPlaylistName.trim() || !newPlaylistUrl.trim()) {
@@ -60,16 +69,30 @@ export default function PlaylistsScreen() {
       return;
     }
 
+    setShowCreateModal(false);
+    setProgressLabel(t('playlists.importing_playlist'));
+    setImportProgress({ phase: 'connecting', current: 0, total: 1, percent: 0 });
+
     try {
       await createPlaylist.mutateAsync({
-        name: newPlaylistName.trim(),
-        url: newPlaylistUrl.trim(),
+        data: {
+          name: newPlaylistName.trim(),
+          url: newPlaylistUrl.trim(),
+        },
+        onProgress: (progress) => {
+          setImportProgress(progress);
+        },
       });
-      setShowCreateModal(false);
       setNewPlaylistName('');
       setNewPlaylistUrl('');
-    } catch (error) {
-      Alert.alert(t('common.error'), t('playlists.error_create'));
+      Alert.alert(t('common.success'), t('playlists.import_success'));
+    } catch (error: any) {
+      const message = error?.message || t('playlists.error_create');
+      console.error('[Playlists] Create failed:', message);
+      Alert.alert(t('common.error'), message);
+    } finally {
+      setImportProgress(null);
+      setProgressLabel('');
     }
   }, [newPlaylistName, newPlaylistUrl, createPlaylist, t]);
 
@@ -94,16 +117,40 @@ export default function PlaylistsScreen() {
     }
   }, [setActivePlaylist]);
 
-  const handleRefresh = useCallback(async (playlist: Playlist) => {
-    setRefreshingId(playlist.id);
-    try {
-      await refreshPlaylist.mutateAsync(playlist.id);
-      Alert.alert(t('common.success'), t('playlists.success_updated'));
-    } catch (error) {
-      Alert.alert(t('common.error'), t('playlists.error_update'));
-    } finally {
-      setRefreshingId(null);
-    }
+  const handleRefresh = useCallback((playlist: Playlist) => {
+    Alert.alert(
+      t('playlists.refresh_warning_title'),
+      t('playlists.refresh_warning'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          onPress: async () => {
+            setRefreshingId(playlist.id);
+            setProgressLabel(t('playlists.updating_playlist'));
+            setImportProgress({ phase: 'connecting', current: 0, total: 1, percent: 0 });
+
+            try {
+              await refreshPlaylist.mutateAsync({
+                id: playlist.id,
+                onProgress: (progress) => {
+                  setImportProgress(progress);
+                },
+              });
+              Alert.alert(t('common.success'), t('playlists.success_updated'));
+            } catch (error: any) {
+              const message = error?.message || t('playlists.error_update');
+              console.error('[Playlists] Refresh failed:', message);
+              Alert.alert(t('common.error'), message);
+            } finally {
+              setRefreshingId(null);
+              setImportProgress(null);
+              setProgressLabel('');
+            }
+          },
+        },
+      ]
+    );
   }, [refreshPlaylist, t]);
 
   const styles = StyleSheet.create({
@@ -199,6 +246,60 @@ export default function PlaylistsScreen() {
       flexDirection: 'row',
       gap: spacing.md,
       marginTop: spacing.md,
+    },
+    // Progress modal styles
+    progressContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.lg,
+      gap: spacing.lg,
+    },
+    progressTitle: {
+      ...typography.title,
+      color: colors.foreground,
+      textAlign: 'center',
+    },
+    progressPhase: {
+      ...typography.body,
+      color: colors.primary,
+      textAlign: 'center',
+    },
+    progressDetail: {
+      ...typography.small,
+      color: colors.mutedForeground,
+      textAlign: 'center',
+    },
+    progressBarContainer: {
+      width: '100%',
+      paddingHorizontal: spacing.sm,
+      gap: spacing.xs,
+    },
+    progressBarTrack: {
+      width: '100%',
+      height: 8,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.muted,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.primary,
+    },
+    progressPercentRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    progressPercent: {
+      ...typography.body,
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    progressHint: {
+      ...typography.small,
+      color: colors.mutedForeground,
+      textAlign: 'center',
+      marginTop: spacing.xs,
     },
   });
 
@@ -359,6 +460,59 @@ export default function PlaylistsScreen() {
               style={{ flex: 1 }}
             />
           </View>
+        </View>
+      </Modal>
+
+      {/* Progress Modal */}
+      <Modal
+        visible={importProgress !== null}
+        onClose={() => {}}
+      >
+        <View style={styles.progressContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+
+          <Text style={styles.progressTitle}>{progressLabel}</Text>
+
+          <Text style={styles.progressPhase}>
+            {importProgress ? getPhaseText(importProgress.phase) : ''}
+          </Text>
+
+          {/* Detail: current / total for importing and categories */}
+          {importProgress && (importProgress.phase === 'importing' || importProgress.phase === 'categories') && importProgress.total > 1 && (
+            <Text style={styles.progressDetail}>
+              {importProgress.phase === 'importing'
+                ? t('playlists.progress_channels', { current: importProgress.current, total: importProgress.total })
+                : t('playlists.progress_categories', { current: importProgress.current, total: importProgress.total })
+              }
+            </Text>
+          )}
+
+          {/* Progress bar */}
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressPercentRow}>
+              <Text style={styles.progressDetail}>
+                {importProgress?.phase === 'done'
+                  ? getPhaseText('done')
+                  : t('common.loading')
+                }
+              </Text>
+              <Text style={styles.progressPercent}>
+                {importProgress?.percent ?? 0}%
+              </Text>
+            </View>
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${importProgress?.percent ?? 0}%` },
+                ]}
+              />
+            </View>
+          </View>
+
+          <Text style={styles.progressHint}>
+            {t('playlists.progress_hint')}
+          </Text>
         </View>
       </Modal>
     </ScreenContainer>

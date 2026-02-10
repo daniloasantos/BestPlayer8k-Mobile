@@ -72,9 +72,9 @@ export const channelsService = {
       totalChannels: (data.counts?.live || 0) + (data.counts?.movies || 0) + (data.counts?.series || 0),
       totalMovies: data.counts?.movies || 0,
       totalSeries: data.counts?.series || 0,
-      totalFavorites: 0, // TODO: implementar no backend
-      total4K: 0, // TODO: implementar no backend
-      totalFHD: 0, // TODO: implementar no backend
+      totalFavorites: data.counts?.favorites || 0,
+      total4K: 0,
+      totalFHD: 0,
       recentlyWatched: [],
     };
   },

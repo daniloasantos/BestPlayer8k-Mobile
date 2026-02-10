@@ -199,7 +199,15 @@
         "empty_action": "Adicionar playlist",
         "success_updated": "Playlist atualizada com sucesso!",
         "error_create": "Não foi possível criar a playlist",
-        "error_update": "Não foi possível atualizar a playlist"
+        "error_update": "Não foi possível atualizar a playlist",
+        "url_placeholder": "https://exemplo.com/playlist.m3u",
+        "refresh_warning_title": "Atualizar Playlist",
+        "refresh_warning": "Este processo pode levar de 1 a 2 minutos dependendo do tamanho da playlist. Deseja continuar?",
+        "updating_playlist": "Atualizando Playlist...",
+        "importing_playlist": "Importando Playlist...",
+        "progress_channels": "{current} de {total} canais",
+        "progress_categories": "{current} de {total} categorias",
+        "progress_hint": "Este processo pode levar de 1 a 2 minutos"
     },
     "profiles": {
         "title": "Quem está assistindo?",

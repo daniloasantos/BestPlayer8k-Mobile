@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image as RNImage } from 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Heart,
-  Share2,
   ChevronLeft,
   ChevronDown,
   ChevronUp,
@@ -444,9 +443,6 @@ export default function SeriesScreen() {
               />
             </Pressable>
 
-            <Pressable style={styles.actionButton}>
-              <Share2 size={20} color={colors.foreground} />
-            </Pressable>
           </View>
 
           {seasons.length > 0 && (

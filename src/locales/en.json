@@ -239,7 +239,15 @@
         "empty_action": "Add playlist",
         "success_updated": "Playlist updated successfully!",
         "error_create": "Could not create playlist",
-        "error_update": "Could not update playlist"
+        "error_update": "Could not update playlist",
+        "url_placeholder": "https://example.com/playlist.m3u",
+        "refresh_warning_title": "Update Playlist",
+        "refresh_warning": "This process may take 1 to 2 minutes depending on the playlist size. Do you want to continue?",
+        "updating_playlist": "Updating Playlist...",
+        "importing_playlist": "Importing Playlist...",
+        "progress_channels": "{current} of {total} channels",
+        "progress_categories": "{current} of {total} categories",
+        "progress_hint": "This process may take 1 to 2 minutes"
     },
     "profiles": {
         "title": "Who's watching?",

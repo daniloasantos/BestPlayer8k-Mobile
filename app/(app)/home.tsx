@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Tv, Tv2, Film, Heart, Clock, ChevronRight, Search, Bell } from 'lucide-react-native';
+import { Tv, Tv2, Film, Heart, Clock, ChevronRight, Search } from 'lucide-react-native';
 import { useAuthStore } from '@/stores';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header, Section } from '@/components/layout';
@@ -240,9 +240,6 @@ export default function HomeScreen() {
               onPress={() => router.push('/search')}
             >
               <Search size={20} color={colors.foreground} />
-            </Pressable>
-            <Pressable style={styles.iconButton}>
-              <Bell size={20} color={colors.foreground} />
             </Pressable>
           </View>
         </View>

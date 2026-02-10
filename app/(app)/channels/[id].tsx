@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import {
   Heart,
-  Share2,
   ChevronLeft,
   AlertCircle,
   Tv,
@@ -76,10 +75,6 @@ export default function ChannelScreen() {
       toggleFavorite.mutate(id);
     }
   }, [id, toggleFavorite]);
-
-  const handleShare = useCallback(() => {
-    // Share functionality
-  }, []);
 
   const handleRelatedPress = useCallback((item: Channel) => {
     router.push(`/channels/${item.id}` as any);
@@ -306,10 +301,6 @@ export default function ChannelScreen() {
               </Text>
             </Pressable>
 
-            <Pressable style={styles.actionButton} onPress={handleShare}>
-              <Share2 size={20} color={colors.foreground} />
-              <Text style={styles.actionText}>Compartilhar</Text>
-            </Pressable>
           </View>
 
           {channel.category && (
