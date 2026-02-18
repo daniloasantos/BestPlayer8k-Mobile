@@ -47,6 +47,13 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "bestplayer8k"
+    "scheme": "bestplayer8k",
+    "extra": {
+      "router": {},
+      "expo-navigation-bar": {},
+      "eas": {
+        "projectId": "bcc4854c-e518-4e50-b91d-65dab36189cc"
+      }
+    }
   }
 }
