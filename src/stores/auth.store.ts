@@ -44,6 +44,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         || profiles[0]?.id
         || null;
 
+      // Salvar profileId no storage para o interceptor do Axios incluir o header x-profile-id
+      if (validProfileId) {
+        await storage.setItem(SELECTED_PROFILE_KEY, validProfileId);
+      }
+
       set({
         user: response.user,
         isAuthenticated: true,
