@@ -389,5 +389,21 @@
         "error_not_match": "Password confirmation does not match.",
         "error_same_password": "New password must be different from current password.",
         "error_generic": "Error changing password."
+    },
+    "support_lightbox": {
+        "title": "Support",
+        "subtitle": "Contact us",
+        "name_label": "Name",
+        "name_placeholder": "Your full name",
+        "email_label": "Email",
+        "email_placeholder": "your@email.com",
+        "phone_label": "Phone",
+        "message_label": "Message",
+        "message_placeholder": "Describe how we can help you...",
+        "send_button": "Send Message",
+        "sending": "Sending...",
+        "success_title": "Message Sent!",
+        "success_message": "We received your message and will respond as soon as possible to the email provided.",
+        "error_send": "Error sending message. Please try again."
     }
 }

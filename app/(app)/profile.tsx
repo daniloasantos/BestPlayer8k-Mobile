@@ -5,8 +5,6 @@ import {
   User,
   Moon,
   Sun,
-  Bell,
-  Shield,
   HelpCircle,
   LogOut,
   ChevronRight,
@@ -19,7 +17,7 @@ import {
 import { useAuthStore } from '@/stores';
 import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
-import { Avatar, Card, ProfileSelector, Modal } from '@/components/ui';
+import { Avatar, Card, ProfileSelector, Modal, ContactModal } from '@/components/ui';
 import { useFavoritesStats, useDashboardStats } from '@/hooks';
 import { useLanguage } from '@/contexts';
 
@@ -46,6 +44,7 @@ export default function ProfileScreen() {
 
   const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const currentProfile = getCurrentProfile();
   const profiles = user?.profiles || [];
@@ -359,11 +358,6 @@ export default function ProfileScreen() {
               }
             />
             <MenuItem
-              icon={Bell}
-              label={t('settings.notifications')}
-              onPress={() => router.push('/settings')}
-            />
-            <MenuItem
               icon={Globe}
               label={t('settings.language')}
               value={getLanguageLabel()}
@@ -377,14 +371,9 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>{t('profiles.account_section')}</Text>
           <Card style={styles.menuCard}>
             <MenuItem
-              icon={Shield}
-              label={t('profiles.privacy_security')}
-              onPress={() => router.push('/settings')}
-            />
-            <MenuItem
               icon={HelpCircle}
               label={t('profiles.help_support')}
-              onPress={() => {}}
+              onPress={() => setShowContactModal(true)}
             />
             <MenuItem
               icon={LogOut}
@@ -459,6 +448,11 @@ export default function ProfileScreen() {
           ))}
         </View>
       </Modal>
+
+      <ContactModal
+        visible={showContactModal}
+        onClose={() => setShowContactModal(false)}
+      />
     </ScreenContainer>
   );
 }

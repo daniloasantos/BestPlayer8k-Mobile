@@ -3,12 +3,16 @@ import { Home, Tv, Library, Heart, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../../src/theme';
 import { useFullscreen, useLanguage } from '../../src/contexts';
+import { useAutoActivatePlaylist } from '../../src/hooks';
 
 export default function AppLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { isFullscreen } = useFullscreen();
   const { t } = useLanguage();
+
+  // Garante que sempre haja uma playlist ativa no backend
+  useAutoActivatePlaylist();
 
   return (
     <Tabs

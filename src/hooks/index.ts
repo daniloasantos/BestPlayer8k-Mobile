@@ -24,6 +24,7 @@ export {
   useDeletePlaylist,
   useSetActivePlaylist,
   useRefreshPlaylist,
+  useAutoActivatePlaylist,
 } from './usePlaylists';
 
 export {

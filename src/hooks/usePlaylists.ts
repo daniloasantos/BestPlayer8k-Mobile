@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { playlistsService, CreatePlaylistData } from '@/services';
 import type { SSEProgress } from '@/services/playlists.service';
 
@@ -69,4 +70,23 @@ export function useRefreshPlaylist() {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
+}
+
+// Auto-activa a primeira playlist quando nenhuma está ativa no backend.
+// Deve ser chamado no layout raiz do app para garantir sincronização.
+export function useAutoActivatePlaylist() {
+  const { data: playlists, isSuccess } = usePlaylists();
+  const { mutate: activate, isPending } = useSetActivePlaylist();
+
+  useEffect(() => {
+    if (
+      isSuccess &&
+      !isPending &&
+      playlists &&
+      playlists.length > 0 &&
+      !playlists.some(p => p.isActive)
+    ) {
+      activate(playlists[0].id);
+    }
+  }, [isSuccess, isPending, playlists, activate]);
 }

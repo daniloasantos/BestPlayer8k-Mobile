@@ -12,3 +12,4 @@ export { SegmentedControl } from './SegmentedControl';
 export { EmptyState } from './EmptyState';
 export { Skeleton, SkeletonText, SkeletonCard } from './Skeleton';
 export { ProfileSelector } from './ProfileSelector';
+export { ContactModal } from './ContactModal';

@@ -389,5 +389,21 @@
         "error_not_match": "La confirmación de contraseña no coincide.",
         "error_same_password": "La nueva contraseña debe ser diferente de la actual.",
         "error_generic": "Error al cambiar contraseña."
+    },
+    "support_lightbox": {
+        "title": "Soporte",
+        "subtitle": "Contáctenos",
+        "name_label": "Nombre",
+        "name_placeholder": "Su nombre completo",
+        "email_label": "Correo electrónico",
+        "email_placeholder": "su@correo.com",
+        "phone_label": "Teléfono",
+        "message_label": "Mensaje",
+        "message_placeholder": "Describa cómo podemos ayudarle...",
+        "send_button": "Enviar Mensaje",
+        "sending": "Enviando...",
+        "success_title": "¡Mensaje Enviado!",
+        "success_message": "Recibimos su mensaje y responderemos lo antes posible al correo electrónico proporcionado.",
+        "error_send": "Error al enviar mensaje. Por favor, intente de nuevo."
     }
 }

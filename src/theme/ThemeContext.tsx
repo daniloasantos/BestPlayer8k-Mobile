@@ -3,6 +3,7 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, ThemeColors, ThemeMode } from './colors';
 import { useAuthStore } from '@/stores';
+import { api } from '@/services/api';
 
 const THEME_STORAGE_KEY = 'app_theme';
 
@@ -34,7 +35,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     loadTheme();
   }, []);
 
-  // Sync theme with selected profile
+  // Sync theme with selected profile (read from backend via user data)
   useEffect(() => {
     const profile = getCurrentProfile();
     if (profile?.theme && (profile.theme === 'light' || profile.theme === 'dark')) {
@@ -67,6 +68,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
     } catch {
       // Ignore storage errors
+    }
+    // Save to backend
+    const profile = getCurrentProfile();
+    if (profile?.id) {
+      api.patch(`/profiles/${profile.id}`, { theme: newTheme }).catch(() => {
+        // Ignore backend errors — local state is already updated
+      });
     }
   };
 

@@ -6,10 +6,15 @@ import type { FavoritesStats } from '@/types';
 import { useAuthStore } from '@/stores';
 import { usePlaylists } from './usePlaylists';
 
-// Hook para obter a playlist ativa
+// Hook para obter a playlist ativa.
+// Usa isActive do backend como fonte de verdade; fallback para a primeira playlist
+// enquanto nenhuma está ativa (ex: antes da auto-ativação completar).
 export function useActivePlaylist() {
   const { data: playlists } = usePlaylists();
-  return useMemo(() => playlists?.find(p => p.isActive), [playlists]);
+  return useMemo(() => {
+    if (!playlists || playlists.length === 0) return undefined;
+    return playlists.find(p => p.isActive) ?? playlists[0];
+  }, [playlists]);
 }
 
 export function useFavorites() {

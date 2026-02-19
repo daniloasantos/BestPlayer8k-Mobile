@@ -311,6 +311,22 @@
         "error_not_match": "A confirmação de senha não confere.",
         "error_same_password": "A nova senha deve ser diferente da senha atual.",
         "error_generic": "Erro ao alterar senha."
+    },
+    "support_lightbox": {
+        "title": "Suporte",
+        "subtitle": "Fale conosco",
+        "name_label": "Nome",
+        "name_placeholder": "Seu nome completo",
+        "email_label": "E-mail",
+        "email_placeholder": "seu@email.com",
+        "phone_label": "Telefone",
+        "message_label": "Mensagem",
+        "message_placeholder": "Descreva como podemos ajudá-lo...",
+        "send_button": "Enviar Mensagem",
+        "sending": "Enviando...",
+        "success_title": "Mensagem Enviada!",
+        "success_message": "Recebemos sua mensagem e responderemos o mais breve possível no e-mail informado.",
+        "error_send": "Erro ao enviar mensagem. Por favor, tente novamente."
     }
 }
 
