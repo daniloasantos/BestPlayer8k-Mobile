@@ -19,6 +19,7 @@ export function useFavorites() {
   return useQuery({
     queryKey: ['favorites', selectedProfileId, activePlaylist?.id],
     queryFn: () => favoritesService.getFavorites(activePlaylist?.id),
+    enabled: !!selectedProfileId,
   });
 }
 

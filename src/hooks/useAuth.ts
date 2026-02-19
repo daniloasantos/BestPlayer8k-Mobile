@@ -4,12 +4,11 @@ import { useAuthStore } from '@/stores';
 
 export function useLogin() {
   const queryClient = useQueryClient();
-  const setUser = useAuthStore((state) => state.setUser);
+  const login = useAuthStore((state) => state.login);
 
   return useMutation({
-    mutationFn: (data: LoginRequest) => authService.login(data),
-    onSuccess: (response) => {
-      setUser(response.user);
+    mutationFn: (data: LoginRequest) => login(data.email, data.password),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth'] });
     },
   });
