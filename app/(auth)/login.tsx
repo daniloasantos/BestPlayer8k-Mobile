@@ -92,6 +92,7 @@ export default function LoginScreen() {
               onPress={handleLogin}
               loading={loginMutation.isPending}
               style={styles.button}
+              fullWidth
             />
 
             <View style={styles.footer}>
@@ -135,6 +136,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
+    textAlign: 'center',
+    width: '100%',
   },
   subtitle: {
     fontSize: 16,
