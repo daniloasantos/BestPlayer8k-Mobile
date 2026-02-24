@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -56,6 +57,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
+            <Image
+              source={require('../../assets/icon-login.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={[styles.title, { color: colors.foreground }]}>BestPlayer8k</Text>
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
               {t('auth.login_title')}
@@ -118,6 +124,12 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl * 2,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: spacing.md,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,
