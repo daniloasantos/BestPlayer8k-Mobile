@@ -60,9 +60,6 @@ export default function LoginScreen() {
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
               {t('auth.login_title')}
             </Text>
-            <Text style={{ color: 'red', fontSize: 10, marginTop: 4 }}>
-              API: {process.env.EXPO_PUBLIC_API_URL ?? 'NOT SET'}
-            </Text>
           </View>
 
           <View style={styles.form}>
