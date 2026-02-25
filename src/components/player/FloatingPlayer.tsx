@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
     Dimensions,
     PanResponder,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { X, Maximize2, Play, Pause } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
@@ -25,10 +25,30 @@ export function FloatingPlayer() {
     const colors = useColors();
     const router = useRouter();
     const { channel, isPlaying, isMinimized, stop, maximize, play, pause } = useFloatingPlayer();
-    const videoRef = useRef<Video>(null);
 
     const position = useRef(new Animated.ValueXY({ x: INITIAL_X, y: INITIAL_Y })).current;
     const [showControls, setShowControls] = useState(false);
+
+    const player = useVideoPlayer(null, (p) => {
+        p.loop = false;
+    });
+
+    // Update player source when channel changes
+    useEffect(() => {
+        if (channel?.streamUrl) {
+            player.replace({ uri: channel.streamUrl });
+        }
+    }, [channel?.streamUrl]);
+
+    // Sync isPlaying from context to player
+    useEffect(() => {
+        if (!channel?.streamUrl) return;
+        if (isPlaying) {
+            player.play();
+        } else {
+            player.pause();
+        }
+    }, [isPlaying, channel?.streamUrl]);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -149,13 +169,10 @@ export function FloatingPlayer() {
                 style={styles.videoContainer}
                 onPress={() => setShowControls(!showControls)}
             >
-                <Video
-                    ref={videoRef}
+                <VideoView
+                    player={player}
                     style={styles.video}
-                    source={{ uri: channel.streamUrl }}
-                    resizeMode={ResizeMode.CONTAIN}
-                    shouldPlay={isPlaying}
-                    isLooping={false}
+                    contentFit="contain"
                 />
 
                 {showControls && (

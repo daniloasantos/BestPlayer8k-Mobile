@@ -11,9 +11,6 @@ export function useAndroidNavigationBar() {
                     // Set visibility to hidden (immersive mode)
                     await NavigationBar.setVisibilityAsync('hidden');
 
-                    // Set background color to black
-                    await NavigationBar.setBackgroundColorAsync('#000000');
-
                     // Set button style to light (white icons)
                     await NavigationBar.setButtonStyleAsync('light');
                 } catch (error) {

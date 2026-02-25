@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
@@ -25,6 +25,8 @@ export function ChannelCard({
 }: ChannelCardProps) {
   const colors = useColors();
   const router = useRouter();
+  const [isFav, setIsFav] = useState(channel.isFavorite);
+  useEffect(() => { setIsFav(channel.isFavorite); }, [channel.isFavorite]);
 
   const handlePress = () => {
     if (onPress) {
@@ -89,9 +91,9 @@ export function ChannelCard({
       width: compact ? 26 : 32,
       height: compact ? 26 : 32,
       borderRadius: borderRadius.md,
-      backgroundColor: channel.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.4)',
+      backgroundColor: isFav ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.4)',
       borderWidth: 1,
-      borderColor: channel.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
+      borderColor: isFav ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 10,
@@ -157,14 +159,15 @@ export function ChannelCard({
             style={styles.favoriteButton}
             onPress={(e) => {
               e.stopPropagation?.();
+              setIsFav(!isFav);
               onFavoritePress?.();
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Heart
               size={compact ? 12 : 16}
-              color={channel.isFavorite ? '#EF4444' : colors.foreground}
-              fill={channel.isFavorite ? '#EF4444' : 'transparent'}
+              color={isFav ? '#EF4444' : colors.foreground}
+              fill={isFav ? '#EF4444' : 'transparent'}
             />
           </Pressable>
         )}

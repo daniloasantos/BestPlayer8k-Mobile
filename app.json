@@ -42,7 +42,8 @@
       "expo-asset",
       "expo-font",
       "expo-navigation-bar",
-      "expo-localization"
+      "expo-localization",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

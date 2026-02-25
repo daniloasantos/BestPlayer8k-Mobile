@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Image as RNImage } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -32,6 +32,8 @@ export default function SeriesScreen() {
   } = useSeriesDetail(id || '');
 
   const toggleFavorite = useToggleFavorite();
+  const [isFav, setIsFav] = useState(false);
+  useEffect(() => { setIsFav(series?.isFavorite ?? false); }, [series?.isFavorite]);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -40,6 +42,7 @@ export default function SeriesScreen() {
   const handleFavorite = useCallback(() => {
     const channelId = series?.channelId || series?.id;
     if (channelId) {
+      setIsFav(prev => !prev);
       toggleFavorite.mutate(channelId);
     }
   }, [series, toggleFavorite]);
@@ -433,14 +436,14 @@ export default function SeriesScreen() {
             <Pressable
               style={[
                 styles.actionButton,
-                series.isFavorite ? styles.actionButtonActive : undefined,
+                isFav ? styles.actionButtonActive : undefined,
               ]}
               onPress={handleFavorite}
             >
               <Heart
                 size={20}
-                color={series.isFavorite ? colors.error : colors.foreground}
-                fill={series.isFavorite ? colors.error : 'transparent'}
+                color={isFav ? colors.error : colors.foreground}
+                fill={isFav ? colors.error : 'transparent'}
               />
             </Pressable>
 

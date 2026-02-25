@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useColors } from '@/theme';
@@ -29,7 +29,6 @@ interface VideoPlayerProps {
 export function VideoPlayer({
   uri,
   title,
-  poster,
   autoPlay = true,
   isFullscreen: externalFullscreen,
   onFullscreenToggle,
@@ -37,28 +36,176 @@ export function VideoPlayer({
   onError,
 }: VideoPlayerProps) {
   const colors = useColors();
-  const videoRef = useRef<Video>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { setFullscreen: setGlobalFullscreen } = useFullscreen();
 
   const [internalFullscreen, setInternalFullscreen] = useState(false);
-  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [positionMs, setPositionMs] = useState(0);
+  const [durationMs, setDurationMs] = useState(0);
+  const [bufferedMs, setBufferedMs] = useState(0);
 
   // Use external fullscreen state if provided, otherwise use internal
   const isFullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
-
-  const isPlaying = status?.isLoaded ? status.isPlaying : false;
-  const position = status?.isLoaded ? status.positionMillis : 0;
-  const duration = status?.isLoaded ? status.durationMillis || 0 : 0;
-  const buffered = status?.isLoaded ? status.playableDurationMillis || 0 : 0;
 
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Calculate player dimensions based on screen
   const playerHeight = isFullscreen ? windowHeight : Math.floor(windowWidth * (9 / 16));
+
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+    if (autoPlay) p.play();
+  });
+
+  // Subscribe to player events
+  useEffect(() => {
+    const playingSub = player.addListener('playingChange', ({ isPlaying: playing }) => {
+      setIsPlaying(playing);
+    });
+
+    const statusSub = player.addListener('statusChange', ({ status }) => {
+      if (status === 'loading') {
+        setIsLoading(true);
+      } else if (status === 'readyToPlay') {
+        setIsLoading(false);
+        setError(null);
+        setDurationMs(Math.round((player.duration ?? 0) * 1000));
+      } else if (status === 'error') {
+        const errMsg = player.error?.message || 'Erro ao reproduzir vídeo';
+        setError(errMsg);
+        setIsLoading(false);
+        onError?.(errMsg);
+      }
+    });
+
+    const timeSub = player.addListener('timeUpdate', ({ currentTime, bufferedPosition }) => {
+      setPositionMs(Math.round(currentTime * 1000));
+      setBufferedMs(Math.round((bufferedPosition ?? 0) * 1000));
+    });
+
+    const endSub = player.addListener('playToEnd', () => {
+      setShowControls(true);
+    });
+
+    return () => {
+      playingSub.remove();
+      statusSub.remove();
+      timeSub.remove();
+      endSub.remove();
+    };
+  }, [player]);
+
+  // Cleanup on unmount — player is released automatically by useVideoPlayer
+  useEffect(() => {
+    return () => {
+      if (controlsTimeout.current) {
+        clearTimeout(controlsTimeout.current);
+      }
+    };
+  }, []);
+
+  // Handle orientation changes and system bars for fullscreen
+  useEffect(() => {
+    const handleFullscreenOrientation = async () => {
+      try {
+        if (isFullscreen) {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.LANDSCAPE
+          );
+          StatusBar.setHidden(true);
+          await NavigationBar.setVisibilityAsync('hidden');
+        } else {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP
+          );
+          StatusBar.setHidden(false);
+          await NavigationBar.setVisibilityAsync('hidden');
+        }
+      } catch (err) {
+        console.error('Error changing orientation:', err);
+      }
+    };
+    handleFullscreenOrientation();
+
+    return () => {
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP
+      ).catch(() => { });
+      StatusBar.setHidden(false);
+      NavigationBar.setVisibilityAsync('visible').catch(() => { });
+    };
+  }, [isFullscreen]);
+
+  // Sync fullscreen state with global context
+  useEffect(() => {
+    setGlobalFullscreen(isFullscreen);
+    return () => {
+      setGlobalFullscreen(false);
+    };
+  }, [isFullscreen, setGlobalFullscreen]);
+
+  // Auto-hide controls effect
+  useEffect(() => {
+    if (showControls && isPlaying) {
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+      controlsTimeout.current = setTimeout(() => {
+        setShowControls(false);
+      }, 4000);
+    } else {
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+    }
+  }, [showControls, isPlaying]);
+
+  const handleTouchScreen = () => {
+    setShowControls((prev) => !prev);
+  };
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  };
+
+  const handleSeek = (valueMs: number) => {
+    player.currentTime = valueMs / 1000;
+  };
+
+  const handleSkipBack = () => {
+    player.seekBy(-10);
+  };
+
+  const handleSkipForward = () => {
+    player.seekBy(10);
+  };
+
+  const handleFullscreenToggle = useCallback(() => {
+    if (onFullscreenToggle) {
+      onFullscreenToggle();
+    } else {
+      setInternalFullscreen((prev) => !prev);
+    }
+  }, [onFullscreenToggle]);
+
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    player.replace({ uri });
+    if (autoPlay) player.play();
+  };
+
+  const handleBack = useCallback(() => {
+    if (isFullscreen) {
+      handleFullscreenToggle();
+    } else {
+      onBack?.();
+    }
+  }, [isFullscreen, handleFullscreenToggle, onBack]);
 
   const styles = StyleSheet.create({
     container: {
@@ -88,150 +235,6 @@ export function VideoPlayer({
     },
   });
 
-  // Handle orientation changes and system bars for fullscreen
-  useEffect(() => {
-    const handleFullscreenOrientation = async () => {
-      try {
-        if (isFullscreen) {
-          await ScreenOrientation.lockAsync(
-            ScreenOrientation.OrientationLock.LANDSCAPE
-          );
-          StatusBar.setHidden(true);
-          await NavigationBar.setVisibilityAsync('hidden');
-          await NavigationBar.setBehaviorAsync('overlay-swipe');
-        } else {
-          await ScreenOrientation.lockAsync(
-            ScreenOrientation.OrientationLock.PORTRAIT_UP
-          );
-          StatusBar.setHidden(false);
-          // Manter immersive ou restaurar conforme app.json, aqui garantimos hidden por padrão do app
-          await NavigationBar.setVisibilityAsync('hidden');
-        }
-      } catch (error) {
-        console.error('Error changing orientation:', error);
-      }
-    };
-    handleFullscreenOrientation();
-
-    return () => {
-      // Reset to portrait when component unmounts
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
-      ).catch(() => { });
-      StatusBar.setHidden(false);
-      NavigationBar.setVisibilityAsync('visible').catch(() => { });
-      NavigationBar.setBehaviorAsync('inset-swipe').catch(() => { });
-    };
-  }, [isFullscreen]);
-
-  // Sync fullscreen state with global context
-  useEffect(() => {
-    setGlobalFullscreen(isFullscreen);
-    return () => {
-      setGlobalFullscreen(false);
-    };
-  }, [isFullscreen, setGlobalFullscreen]);
-
-  useEffect(() => {
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.unloadAsync().catch(() => { });
-      }
-      if (controlsTimeout.current) {
-        clearTimeout(controlsTimeout.current);
-      }
-    };
-  }, []);
-
-  // Auto-hide controls effect
-  useEffect(() => {
-    if (showControls && isPlaying) {
-      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
-      controlsTimeout.current = setTimeout(() => {
-        setShowControls(false);
-      }, 4000);
-    } else {
-      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
-    }
-  }, [showControls, isPlaying]);
-
-  const handleTouchScreen = () => {
-    setShowControls((prev) => !prev);
-  };
-
-  const handlePlayPause = async () => {
-    if (!videoRef.current) return;
-
-    if (isPlaying) {
-      await videoRef.current.pauseAsync();
-    } else {
-      await videoRef.current.playAsync();
-    }
-  };
-
-  const handleSeek = async (value: number) => {
-    if (!videoRef.current) return;
-    await videoRef.current.setPositionAsync(value);
-  };
-
-  const handleSkipBack = async () => {
-    if (!videoRef.current) return;
-    const newPosition = Math.max(0, position - 10000);
-    await videoRef.current.setPositionAsync(newPosition);
-  };
-
-  const handleSkipForward = async () => {
-    if (!videoRef.current) return;
-    const newPosition = Math.min(duration, position + 10000);
-    await videoRef.current.setPositionAsync(newPosition);
-  };
-
-  const handleFullscreenToggle = useCallback(async () => {
-    if (onFullscreenToggle) {
-      onFullscreenToggle();
-    } else {
-      setInternalFullscreen((prev) => !prev);
-    }
-  }, [onFullscreenToggle]);
-
-  const handlePlaybackStatusUpdate = (playbackStatus: AVPlaybackStatus) => {
-    setStatus(playbackStatus);
-
-    if (playbackStatus.isLoaded) {
-      setIsLoading(false);
-      setError(null);
-
-      if (playbackStatus.didJustFinish) {
-        setShowControls(true);
-      }
-    } else if (playbackStatus.error) {
-      setError(playbackStatus.error);
-      setIsLoading(false);
-      onError?.(playbackStatus.error);
-    }
-  };
-
-  const handleRetry = async () => {
-    setError(null);
-    setIsLoading(true);
-    if (videoRef.current) {
-      await videoRef.current.unloadAsync();
-      await videoRef.current.loadAsync(
-        { uri },
-        { shouldPlay: autoPlay },
-        false
-      );
-    }
-  };
-
-  const handleBack = useCallback(() => {
-    if (isFullscreen) {
-      handleFullscreenToggle();
-    } else {
-      onBack?.();
-    }
-  }, [isFullscreen, handleFullscreenToggle, onBack]);
-
   if (error) {
     return (
       <View style={styles.container}>
@@ -248,18 +251,10 @@ export function VideoPlayer({
     <View style={styles.container}>
       <StatusBar hidden={isFullscreen} />
 
-      <Video
-        ref={videoRef}
+      <VideoView
+        player={player}
         style={styles.video}
-        source={{ uri }}
-        posterSource={poster ? { uri: poster } : undefined}
-        usePoster={!!poster}
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={autoPlay}
-        isLooping={false}
-        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-        onLoadStart={() => setIsLoading(true)}
-        onLoad={() => setIsLoading(false)}
+        contentFit="contain"
       />
 
       <Pressable style={styles.touchArea} onPress={handleTouchScreen}>
@@ -272,9 +267,9 @@ export function VideoPlayer({
         {showControls && !isLoading && (
           <PlayerControls
             isPlaying={isPlaying}
-            position={position}
-            duration={duration}
-            buffered={buffered}
+            position={positionMs}
+            duration={durationMs}
+            buffered={bufferedMs}
             title={title}
             isFullscreen={isFullscreen}
             onPlayPause={handlePlayPause}

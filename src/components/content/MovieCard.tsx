@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Film, Heart, Play } from 'lucide-react-native';
@@ -28,6 +28,8 @@ export function MovieCard({
   const colors = useColors();
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  const [isFav, setIsFav] = useState(movie.isFavorite);
+  useEffect(() => { setIsFav(movie.isFavorite); }, [movie.isFavorite]);
 
   const handlePress = () => {
     if (onPress) {
@@ -112,9 +114,9 @@ export function MovieCard({
       width: compact ? 24 : 32,
       height: compact ? 24 : 32,
       borderRadius: borderRadius.md,
-      backgroundColor: movie.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: isFav ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
       borderWidth: 1,
-      borderColor: movie.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+      borderColor: isFav ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: spacing.xs,
@@ -200,14 +202,15 @@ export function MovieCard({
                 style={styles.favoriteButton}
                 onPress={(e) => {
                   e.stopPropagation?.();
+                  setIsFav(!isFav);
                   onFavoritePress?.();
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Heart
                   size={compact ? 12 : 16}
-                  color={movie.isFavorite ? '#EF4444' : '#fff'}
-                  fill={movie.isFavorite ? '#EF4444' : 'transparent'}
+                  color={isFav ? '#EF4444' : '#fff'}
+                  fill={isFav ? '#EF4444' : 'transparent'}
                 />
               </Pressable>
             )}

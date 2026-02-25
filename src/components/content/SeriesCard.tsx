@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Play, Heart, Tv2 } from 'lucide-react-native';
@@ -28,6 +28,8 @@ export function SeriesCard({
   const colors = useColors();
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  const [isFav, setIsFav] = useState(series.isFavorite);
+  useEffect(() => { setIsFav(series.isFavorite); }, [series.isFavorite]);
 
   const handlePress = () => {
     if (onPress) {
@@ -113,9 +115,9 @@ export function SeriesCard({
       width: compact ? 24 : 32,
       height: compact ? 24 : 32,
       borderRadius: borderRadius.md,
-      backgroundColor: series.isFavorite ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: isFav ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 0, 0, 0.5)',
       borderWidth: 1,
-      borderColor: series.isFavorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+      borderColor: isFav ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: spacing.xs,
@@ -209,14 +211,15 @@ export function SeriesCard({
                 style={styles.favoriteButton}
                 onPress={(e) => {
                   e.stopPropagation?.();
+                  setIsFav(!isFav);
                   onFavoritePress?.();
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Heart
                   size={compact ? 12 : 16}
-                  color={series.isFavorite ? '#EF4444' : '#fff'}
-                  fill={series.isFavorite ? '#EF4444' : 'transparent'}
+                  color={isFav ? '#EF4444' : '#fff'}
+                  fill={isFav ? '#EF4444' : 'transparent'}
                 />
               </Pressable>
             )}
