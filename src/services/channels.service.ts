@@ -1,6 +1,12 @@
 import { api } from './api';
 import type { Channel, Category, ChannelParams, PaginatedResponse, ChannelType, DashboardStats } from '@/types';
 
+const buildProxyUrl = (rawUrl: string): string => {
+  if (!rawUrl) return rawUrl;
+  const base = api.defaults.baseURL || '';
+  return `${base}/stream/proxy?url=${encodeURIComponent(rawUrl)}`;
+};
+
 // Helper para transformar canal do backend para o formato do mobile
 const transformChannel = (item: any): Channel => ({
   id: item.id,
@@ -9,7 +15,7 @@ const transformChannel = (item: any): Channel => ({
   quality: item.quality,
   category: item.group || item.Category?.name || '',
   categoryId: item.categoryId || item.Category?.id || '',
-  streamUrl: item.url,
+  streamUrl: buildProxyUrl(item.url),
   isFavorite: item.isFavorite || false,
   type: item.type,
   description: item.description,

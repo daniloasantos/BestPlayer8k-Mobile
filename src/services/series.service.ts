@@ -1,6 +1,12 @@
 import { api } from './api';
 import type { Series, Season, Episode, Category, PaginatedResponse, ChannelParams } from '@/types';
 
+const buildProxyUrl = (rawUrl: string): string => {
+  if (!rawUrl) return rawUrl;
+  const base = api.defaults.baseURL || '';
+  return `${base}/stream/proxy?url=${encodeURIComponent(rawUrl)}`;
+};
+
 // Helper para transformar episódio do backend
 const transformEpisode = (item: any, seasonNumber: number): Episode => ({
   id: item.id,
@@ -8,7 +14,7 @@ const transformEpisode = (item: any, seasonNumber: number): Episode => ({
   number: item.episode || item.number || 1,
   season: seasonNumber,
   episode: item.episode || item.number || 1,
-  streamUrl: item.streamUrl || item.url || '',
+  streamUrl: buildProxyUrl(item.streamUrl || item.url || ''),
   quality: item.quality,
   duration: item.duration,
   thumbnail: item.logo || item.thumbnail,
