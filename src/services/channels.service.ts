@@ -11,7 +11,7 @@ const buildProxyUrl = (rawUrl: string): string => {
 const transformChannel = (item: any): Channel => ({
   id: item.id,
   name: item.name,
-  logo: item.logo,
+  logo: item.logo ? buildProxyUrl(item.logo) : null,
   quality: item.quality,
   category: item.group || item.Category?.name || '',
   categoryId: item.categoryId || item.Category?.id || '',
@@ -19,7 +19,7 @@ const transformChannel = (item: any): Channel => ({
   isFavorite: item.isFavorite || false,
   type: item.type,
   description: item.description,
-  poster: item.poster || item.logo,
+  poster: item.posterUrl || item.poster || item.logo ? buildProxyUrl(item.posterUrl || item.poster || item.logo) : null,
 });
 
 export const channelsService = {
