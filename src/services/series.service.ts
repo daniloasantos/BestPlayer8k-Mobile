@@ -17,7 +17,7 @@ const transformEpisode = (item: any, seasonNumber: number): Episode => ({
   streamUrl: buildProxyUrl(item.streamUrl || item.url || ''),
   quality: item.quality,
   duration: item.duration,
-  thumbnail: item.logo || item.thumbnail,
+  thumbnail: item.logo || item.thumbnail ? buildProxyUrl(item.logo || item.thumbnail) : undefined,
 });
 
 // Helper para transformar temporada do backend
@@ -33,8 +33,8 @@ const transformSeries = (item: any): Series => ({
   id: item.id,
   channelId: item.firstChannelId,
   name: item.name,
-  logo: item.logo,
-  poster: item.poster || item.posterUrl || item.logo,
+  logo: item.logo ? buildProxyUrl(item.logo) : undefined,
+  poster: item.poster || item.posterUrl || item.logo ? buildProxyUrl(item.poster || item.posterUrl || item.logo) : undefined,
   category: item.category || item.Category?.name || '',
   categoryId: item.categoryId || item.Category?.id || '',
   quality: item.quality,
