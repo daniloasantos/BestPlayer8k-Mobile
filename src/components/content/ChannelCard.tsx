@@ -26,6 +26,7 @@ export function ChannelCard({
   const colors = useColors();
   const router = useRouter();
   const [isFav, setIsFav] = useState(channel.isFavorite);
+  const [imageError, setImageError] = useState(false);
   useEffect(() => { setIsFav(channel.isFavorite); }, [channel.isFavorite]);
 
   const handlePress = () => {
@@ -134,11 +135,12 @@ export function ChannelCard({
       onPress={handlePress}
     >
       <View style={styles.imageContainer}>
-        {channel.logo ? (
+        {channel.logo && !imageError ? (
           <Image
             source={{ uri: channel.logo }}
             style={styles.image}
             resizeMode="contain"
+            onError={() => setImageError(true)}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
