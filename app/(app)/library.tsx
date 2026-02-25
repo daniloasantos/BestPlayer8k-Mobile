@@ -75,7 +75,8 @@ export default function LibraryScreen() {
   }, [activeTab, router]);
 
   const handleFavoritePress = useCallback((item: Channel | Series) => {
-    toggleFavorite.mutate(item.id);
+    const channelId = ('channelId' in item && item.channelId) ? item.channelId : item.id;
+    toggleFavorite.mutate(channelId);
   }, [toggleFavorite]);
 
   const handleSearch = useCallback((text: string) => {

@@ -58,7 +58,7 @@ export default function FavoritesScreen() {
 
   const handleItemPress = useCallback((item: Channel) => {
     if (item.type === 'SERIES') {
-      router.push(`/series/${item.id}` as any);
+      router.push(`/series/${item.seriesId || item.id}` as any);
     } else {
       router.push(`/channels/${item.id}` as any);
     }

@@ -39,6 +39,8 @@ export interface Channel {
   genre?: string;
   duration?: number;
   epgData?: EpgData;
+  /** Normalized series slug (only for SERIES type in favorites, used for navigation) */
+  seriesId?: string;
 }
 
 export interface EpgData {
@@ -77,6 +79,8 @@ export interface Movie {
 
 export interface Series {
   id: string;
+  /** Real DB channel ID of the first episode, used for toggling favorites */
+  channelId?: string;
   name: string;
   logo: string | null;
   poster?: string | null;

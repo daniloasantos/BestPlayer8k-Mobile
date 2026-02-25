@@ -31,9 +31,10 @@ const transformSeason = (item: any): Season => ({
 // Helper para transformar série do backend
 const transformSeries = (item: any): Series => ({
   id: item.id,
+  channelId: item.firstChannelId,
   name: item.name,
   logo: item.logo,
-  poster: item.poster || item.logo,
+  poster: item.poster || item.posterUrl || item.logo,
   category: item.category || item.Category?.name || '',
   categoryId: item.categoryId || item.Category?.id || '',
   quality: item.quality,

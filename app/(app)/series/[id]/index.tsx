@@ -38,8 +38,9 @@ export default function SeriesScreen() {
   }, [router]);
 
   const handleFavorite = useCallback(() => {
-    if (series?.id) {
-      toggleFavorite.mutate(series.id);
+    const channelId = series?.channelId || series?.id;
+    if (channelId) {
+      toggleFavorite.mutate(channelId);
     }
   }, [series, toggleFavorite]);
 
