@@ -23,10 +23,12 @@ export default function ChannelScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { setChannel: setFloatingChannel, minimize, stop: stopFloatingPlayer, maximize } = useFloatingPlayer();
   const [isActive, setIsActive] = useState(true);
+  const [videoReady, setVideoReady] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       setIsActive(true);
+      setVideoReady(false);
       return () => {
         setIsActive(false);
         setFloatingChannel(null);
@@ -43,6 +45,7 @@ export default function ChannelScreen() {
   const markAsWatched = useMarkAsWatched();
   const toggleFavorite = useToggleFavorite();
 
+  // Só busca conteúdo relacionado depois que o vídeo estiver pronto
   const {
     data: relatedChannels,
     isLoading: loadingRelated,
@@ -50,7 +53,7 @@ export default function ChannelScreen() {
     type: channel?.type,
     category: channel?.category,
     limit: 10,
-  });
+  }, { enabled: videoReady });
 
   // Close floating player when opening a new full player
   useEffect(() => {
@@ -256,6 +259,7 @@ export default function ChannelScreen() {
             title={channel.name}
             poster={channel.logo || undefined}
             onBack={handleBack}
+            onReady={() => setVideoReady(true)}
           />
         ) : (
           <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' }} />

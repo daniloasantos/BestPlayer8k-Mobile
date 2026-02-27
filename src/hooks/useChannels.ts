@@ -1,27 +1,40 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { channelsService } from '@/services';
-import type { ChannelParams, ChannelType } from '@/types';
+import type { Channel, ChannelParams, ChannelType, PaginatedResponse } from '@/types';
 import { useAuthStore } from '@/stores';
 import { useActivePlaylist } from './useFavorites';
 
-export function useChannels(params?: ChannelParams) {
+export function useChannels(params?: ChannelParams, options?: { enabled?: boolean }) {
   const activePlaylist = useActivePlaylist();
   const playlistId = activePlaylist?.id;
 
   return useQuery({
     queryKey: ['channels', params, playlistId],
     queryFn: () => channelsService.getChannels({ ...params, playlistId }),
+    staleTime: 60_000,
+    enabled: options?.enabled !== false,
   });
 }
 
 export function useChannel(id: string, playlistId?: string) {
   const activePlaylist = useActivePlaylist();
   const effectivePlaylistId = playlistId || activePlaylist?.id;
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['channel', id, effectivePlaylistId],
     queryFn: () => channelsService.getChannel(id, effectivePlaylistId),
     enabled: !!id,
+    staleTime: 60_000,
+    placeholderData: () => {
+      // Reutiliza dado já em cache das listagens para iniciar o player imediatamente
+      const queries = queryClient.getQueriesData<PaginatedResponse<Channel>>({ queryKey: ['channels'] });
+      for (const [, data] of queries) {
+        const found = data?.items?.find((c: Channel) => c.id === id);
+        if (found) return found;
+      }
+      return undefined;
+    },
   });
 }
 
