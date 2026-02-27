@@ -100,6 +100,7 @@
         "section_notifications": "NOTIFICAÇÕES",
         "section_privacy": "PRIVACIDADE",
         "dark_mode": "Tema escuro",
+        "light_mode": "Tema claro",
         "dark_mode_description": "Alterna entre modo claro e escuro",
         "accent_color": "Cor de destaque",
         "accent_color_value": "Roxo (padrão)",

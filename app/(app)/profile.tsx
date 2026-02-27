@@ -346,7 +346,7 @@ export default function ProfileScreen() {
           <Card style={styles.menuCard}>
             <MenuItem
               icon={mode === 'dark' ? Moon : Sun}
-              label={t('settings.dark_mode')}
+              label={mode === 'dark' ? t('settings.dark_mode') : t('settings.light_mode')}
               showArrow={false}
               rightElement={
                 <Switch

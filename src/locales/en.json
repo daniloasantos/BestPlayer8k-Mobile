@@ -100,6 +100,7 @@
         "section_notifications": "NOTIFICATIONS",
         "section_privacy": "PRIVACY",
         "dark_mode": "Dark theme",
+        "light_mode": "Light theme",
         "dark_mode_description": "Toggle between light and dark mode",
         "accent_color": "Accent color",
         "accent_color_value": "Purple (default)",
