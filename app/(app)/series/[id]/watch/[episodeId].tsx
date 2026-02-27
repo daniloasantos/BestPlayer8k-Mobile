@@ -11,12 +11,13 @@ import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { VideoPlayer } from '@/components/player';
 import { QualityBadge, Badge, Loading, EmptyState } from '@/components/ui';
 import { useSeriesDetail, useMarkAsWatched, useToggleFavorite } from '@/hooks';
-import { useFloatingPlayer } from '@/contexts';
+import { useFloatingPlayer, useLanguage } from '@/contexts';
 import type { Episode } from '@/types';
 
 export default function EpisodePlayerScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const {
     id: seriesId,
     episodeId,
@@ -109,7 +110,7 @@ export default function EpisodePlayerScreen() {
       params: {
         id: seriesId || '',
         episodeId: episode.id,
-        episodeName: episode.name || `Episódio ${episode.number}`,
+        episodeName: episode.name || t('series.episode_fallback', { number: episode.number }),
         streamUrl: episode.streamUrl,
         season: episode.season?.toString() || '1',
         episodeNumber: episode.number?.toString() || '1',
@@ -224,7 +225,7 @@ export default function EpisodePlayerScreen() {
 
   // Use URL params or fetched episode data
   const displayStreamUrl = currentEpisode?.streamUrl || streamUrl || '';
-  const displayName = currentEpisode?.name || episodeName || 'Episódio';
+  const displayName = currentEpisode?.name || episodeName || t('series.episode_label');
   const displaySeason = currentEpisode?.season?.toString() || season || '1';
   const displayEpisodeNumber = currentEpisode?.number?.toString() || episodeNumber || '1';
   const episodeQuality = currentEpisode?.quality;
@@ -237,7 +238,7 @@ export default function EpisodePlayerScreen() {
             <ChevronLeft size={24} color={colors.foreground} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            Episódio
+            {t('series.episode_label')}
           </Text>
           <Pressable style={styles.favoriteButton} onPress={handleFavorite} hitSlop={8}>
             <Heart
@@ -250,9 +251,9 @@ export default function EpisodePlayerScreen() {
         <View style={styles.errorContainer}>
           <EmptyState
             icon={AlertCircle}
-            title="Stream não disponível"
-            description="Não foi possível carregar o stream deste episódio."
-            actionLabel="Voltar"
+            title={t('series.stream_unavailable')}
+            description={t('series.stream_unavailable_desc')}
+            actionLabel={t('common.back')}
             onAction={handleBack}
           />
         </View>
@@ -269,7 +270,7 @@ export default function EpisodePlayerScreen() {
             <ChevronLeft size={24} color={colors.foreground} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={2}>
-            {series?.name || 'Série'}
+            {series?.name || t('series.series_fallback')}
           </Text>
           <Pressable style={styles.favoriteButton} onPress={handleFavorite} hitSlop={8}>
             <Heart
@@ -306,7 +307,7 @@ export default function EpisodePlayerScreen() {
               <QualityBadge quality={episodeQuality} size="md" />
             )}
             <Badge variant="secondary" size="md">
-              Episódio {displayEpisodeNumber}
+              {t('series.episode_badge', { number: displayEpisodeNumber })}
             </Badge>
           </View>
 
@@ -318,7 +319,7 @@ export default function EpisodePlayerScreen() {
               disabled={!prevEpisode}
             >
               <ChevronLeft size={20} color={colors.foreground} />
-              <Text style={styles.navButtonText}>Anterior</Text>
+              <Text style={styles.navButtonText}>{t('series.prev_episode')}</Text>
             </Pressable>
 
             <Pressable
@@ -326,7 +327,7 @@ export default function EpisodePlayerScreen() {
               onPress={() => nextEpisode && navigateToEpisode(nextEpisode)}
               disabled={!nextEpisode}
             >
-              <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>Próximo</Text>
+              <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>{t('series.next_episode')}</Text>
               <ChevronRight size={20} color="#FFFFFF" />
             </Pressable>
           </View>

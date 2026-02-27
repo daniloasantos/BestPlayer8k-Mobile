@@ -14,13 +14,14 @@ import { VideoPlayer } from '@/components/player';
 import { QualityBadge, Badge, Button, Loading, EmptyState } from '@/components/ui';
 import { HorizontalList } from '@/components/content';
 import { useChannel, useChannels, useMarkAsWatched, useToggleFavorite, useMovieInfo } from '@/hooks';
-import { useFloatingPlayer } from '@/contexts';
+import { useFloatingPlayer, useLanguage } from '@/contexts';
 import { MovieSynopsis } from '@/components/content';
 import type { Channel } from '@/types';
 
 export default function ChannelScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { setChannel: setFloatingChannel, minimize, stop: stopFloatingPlayer, maximize } = useFloatingPlayer();
   const [isActive, setIsActive] = useState(true);
@@ -225,9 +226,9 @@ export default function ChannelScreen() {
         <View style={styles.errorContainer}>
           <EmptyState
             icon={AlertCircle}
-            title="Canal não encontrado"
-            description="O canal que você está procurando não existe ou foi removido."
-            actionLabel="Voltar"
+            title={t('channels.detail_not_found')}
+            description={t('channels.detail_not_found_desc')}
+            actionLabel={t('common.back')}
             onAction={handleBack}
           />
         </View>
@@ -277,14 +278,14 @@ export default function ChannelScreen() {
           <View style={styles.badges}>
             {channel.type === 'LIVE' && (
               <Badge variant="error" size="md">
-                AO VIVO
+                {t('channels.badge_live')}
               </Badge>
             )}
             {channel.type === 'MOVIE' && (
               <Badge variant="default" size="md">
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Film size={12} color={colors.foreground} />
-                  <Text style={{ color: colors.foreground, fontSize: 12 }}>Filme</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 12 }}>{t('channels.badge_movie')}</Text>
                 </View>
               </Badge>
             )}
@@ -307,7 +308,7 @@ export default function ChannelScreen() {
                 fill={channel.isFavorite ? colors.error : 'transparent'}
               />
               <Text style={styles.actionText}>
-                {channel.isFavorite ? 'Favoritado' : 'Favoritar'}
+                {channel.isFavorite ? t('channels.favorited') : t('channels.favorite')}
               </Text>
             </Pressable>
 
@@ -331,7 +332,7 @@ export default function ChannelScreen() {
         {/* Related Content */}
         {filteredRelated && filteredRelated.length > 0 && (
           <View style={styles.relatedSection}>
-            <Text style={styles.relatedTitle}>Conteúdo Relacionado</Text>
+            <Text style={styles.relatedTitle}>{t('channels.related_content')}</Text>
             <HorizontalList
               data={filteredRelated}
               type="channel"

@@ -262,7 +262,14 @@
         "items_count": "{count} Itens",
         "empty_category_series": "Nenhuma série disponível nesta categoria.",
         "empty_category_movies": "Nenhum filme disponível nesta categoria.",
-        "empty_category_live": "Nenhum canal disponível nesta categoria."
+        "empty_category_live": "Nenhum canal disponível nesta categoria.",
+        "detail_not_found": "Canal não encontrado",
+        "detail_not_found_desc": "O canal que você está procurando não existe ou foi removido.",
+        "badge_live": "AO VIVO",
+        "badge_movie": "Filme",
+        "favorite": "Favoritar",
+        "favorited": "Favoritado",
+        "related_content": "Conteúdo Relacionado"
     },
 
     "dashboard": {
@@ -328,6 +335,31 @@
         "success_title": "Mensagem Enviada!",
         "success_message": "Recebemos sua mensagem e responderemos o mais breve possível no e-mail informado.",
         "error_send": "Erro ao enviar mensagem. Por favor, tente novamente."
+    },
+    "series": {
+        "not_found": "Série não encontrada",
+        "not_found_desc": "A série que você está procurando não existe ou foi removida.",
+        "seasons_section": "Temporadas e Episódios",
+        "watch_first": "Assistir S01E01",
+        "season_singular": "Temporada",
+        "season_plural": "Temporadas",
+        "episode_singular": "Episódio",
+        "episode_plural": "Episódios",
+        "season_fallback": "Temporada {number}",
+        "episode_fallback": "Episódio {number}",
+        "no_episodes_title": "Nenhum episódio disponível",
+        "no_episodes_desc": "Esta série ainda não possui episódios cadastrados.",
+        "stream_unavailable": "Stream não disponível",
+        "stream_unavailable_desc": "Não foi possível carregar o stream deste episódio.",
+        "episode_label": "Episódio",
+        "series_fallback": "Série",
+        "prev_episode": "Anterior",
+        "next_episode": "Próximo",
+        "episode_badge": "Episódio {number}"
+    },
+    "movies": {
+        "see_more": "Ver mais",
+        "see_less": "Ver menos"
     }
 }
 

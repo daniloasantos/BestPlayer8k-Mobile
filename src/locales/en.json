@@ -302,7 +302,14 @@
         "items_count": "{count} Items",
         "empty_category_series": "No series available in this category.",
         "empty_category_movies": "No movies available in this category.",
-        "empty_category_live": "No channels available in this category."
+        "empty_category_live": "No channels available in this category.",
+        "detail_not_found": "Channel not found",
+        "detail_not_found_desc": "The channel you are looking for does not exist or was removed.",
+        "badge_live": "LIVE",
+        "badge_movie": "Movie",
+        "favorite": "Add to Favorites",
+        "favorited": "Favorited",
+        "related_content": "Related Content"
     },
 
     "dashboard": {
@@ -406,5 +413,30 @@
         "success_title": "Message Sent!",
         "success_message": "We received your message and will respond as soon as possible to the email provided.",
         "error_send": "Error sending message. Please try again."
+    },
+    "series": {
+        "not_found": "Series not found",
+        "not_found_desc": "The series you are looking for does not exist or was removed.",
+        "seasons_section": "Seasons & Episodes",
+        "watch_first": "Watch S01E01",
+        "season_singular": "Season",
+        "season_plural": "Seasons",
+        "episode_singular": "Episode",
+        "episode_plural": "Episodes",
+        "season_fallback": "Season {number}",
+        "episode_fallback": "Episode {number}",
+        "no_episodes_title": "No episodes available",
+        "no_episodes_desc": "This series has no episodes yet.",
+        "stream_unavailable": "Stream unavailable",
+        "stream_unavailable_desc": "Could not load the stream for this episode.",
+        "episode_label": "Episode",
+        "series_fallback": "Series",
+        "prev_episode": "Previous",
+        "next_episode": "Next",
+        "episode_badge": "Episode {number}"
+    },
+    "movies": {
+        "see_more": "See more",
+        "see_less": "See less"
     }
 }

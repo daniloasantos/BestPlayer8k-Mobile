@@ -8,6 +8,13 @@ const NOISE_RE =
   /\b(4K|UHD|FHD|FULL[\s_-]?HD|HD|SD|H\.?265|HEVC|H\.?264|AVC|HDR|DV|DOLBY|IMAX|DUAL|DUB|LEG|LEGENDADO|DUBLADO|NACIONAL|ORIGINAL|REMUX|BLURAY|BLU-RAY|WEBRIP|HDRIP|BDRIP|CAM|TS)\b/gi;
 const BRACKET_RE = /[\[\(][^\]\)]{0,20}[\]\)]/g;
 
+/** Maps app language code to TMDB locale string. */
+const TMDB_LOCALE_MAP: Record<string, string> = {
+  pt: 'pt-BR',
+  en: 'en-US',
+  es: 'es-MX',
+};
+
 /** Strips IPTV-specific noise from a raw channel name before searching. */
 export function cleanMovieTitle(raw: string): string {
   return raw
@@ -45,16 +52,21 @@ interface TmdbGenre {
   name: string;
 }
 
-// Lazily loaded genre map (pt-BR)
-let genreCache: Map<number, string> | null = null;
+// Per-language genre cache
+const genreCacheByLocale = new Map<string, Map<number, string>>();
 
-async function fetchGenres(language: string): Promise<Map<number, string>> {
+async function fetchGenres(locale: string): Promise<Map<number, string>> {
+  if (genreCacheByLocale.has(locale)) {
+    return genreCacheByLocale.get(locale)!;
+  }
   const res = await fetch(
-    `${TMDB_BASE}/genre/movie/list?api_key=${TMDB_API_KEY}&language=${language}`,
+    `${TMDB_BASE}/genre/movie/list?api_key=${TMDB_API_KEY}&language=${locale}`,
   );
   if (!res.ok) return new Map();
   const data = await res.json() as { genres: TmdbGenre[] };
-  return new Map(data.genres.map((g) => [g.id, g.name]));
+  const map = new Map(data.genres.map((g) => [g.id, g.name]));
+  genreCacheByLocale.set(locale, map);
+  return map;
 }
 
 async function searchMovies(query: string, language: string): Promise<TmdbSearchResult[]> {
@@ -67,30 +79,27 @@ async function searchMovies(query: string, language: string): Promise<TmdbSearch
 
 /**
  * Fetches movie info from TMDB for a given raw IPTV channel name.
- * Tries pt-BR first, falls back to en-US if no overview is found.
+ * Uses the provided app language for the query, falls back to en-US.
  * Returns null if the API key is not set or no result is found.
  */
-export async function fetchMovieInfo(rawTitle: string): Promise<TmdbMovieInfo | null> {
+export async function fetchMovieInfo(rawTitle: string, appLanguage = 'pt'): Promise<TmdbMovieInfo | null> {
   if (!TMDB_API_KEY) return null;
 
   const cleanTitle = cleanMovieTitle(rawTitle);
   if (!cleanTitle) return null;
 
-  // Ensure genre map is loaded (cached after first call)
-  if (!genreCache) {
-    genreCache = await fetchGenres('pt-BR');
-  }
+  const preferredLocale = TMDB_LOCALE_MAP[appLanguage] ?? 'pt-BR';
+  const fallbackLocale = 'en-US';
 
-  // Try Portuguese first, then English
-  let results = await searchMovies(cleanTitle, 'pt-BR');
-  let language = 'pt-BR';
+  const genreMap = await fetchGenres(preferredLocale);
+
+  let results = await searchMovies(cleanTitle, preferredLocale);
 
   // Fallback: if first result has no overview, retry in English
-  if (!results.length || !results[0].overview) {
-    const enResults = await searchMovies(cleanTitle, 'en-US');
+  if ((!results.length || !results[0].overview) && preferredLocale !== fallbackLocale) {
+    const enResults = await searchMovies(cleanTitle, fallbackLocale);
     if (enResults.length && enResults[0].overview) {
       results = enResults;
-      language = 'en-US';
     }
   }
 
@@ -99,7 +108,7 @@ export async function fetchMovieInfo(rawTitle: string): Promise<TmdbMovieInfo | 
 
   const year = best.release_date ? parseInt(best.release_date.slice(0, 4), 10) : null;
   const genres = best.genre_ids
-    .map((id) => genreCache?.get(id) ?? '')
+    .map((id) => genreMap.get(id) ?? '')
     .filter(Boolean)
     .slice(0, 3);
 

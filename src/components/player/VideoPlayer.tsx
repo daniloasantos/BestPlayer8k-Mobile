@@ -324,6 +324,7 @@ export function VideoPlayer({
         player={player}
         style={styles.video}
         contentFit="contain"
+        nativeControls={false}
       />
 
       {/* Tap-to-toggle area — sits under PlayerControls; only fires when controls are hidden */}

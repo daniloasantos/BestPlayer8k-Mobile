@@ -16,11 +16,13 @@ import {
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { QualityBadge, Badge, Loading, EmptyState, Card } from '@/components/ui';
 import { useSeriesDetail, useToggleFavorite } from '@/hooks';
+import { useLanguage } from '@/contexts';
 import type { Season, Episode } from '@/types';
 
 export default function SeriesScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [expandedSeasons, setExpandedSeasons] = useState<Set<number>>(new Set([1]));
@@ -54,7 +56,7 @@ export default function SeriesScreen() {
       params: {
         id: id || '',
         episodeId: episode.id,
-        episodeName: episode.name || `Episódio ${episode.number}`,
+        episodeName: episode.name || t('series.episode_fallback', { number: episode.number }),
         streamUrl: episode.streamUrl,
         season: episode.season?.toString() || '1',
         episodeNumber: episode.number?.toString() || '1',
@@ -330,9 +332,9 @@ export default function SeriesScreen() {
         <View style={styles.errorContainer}>
           <EmptyState
             icon={AlertCircle}
-            title="Série não encontrada"
-            description="A série que você está procurando não existe ou foi removida."
-            actionLabel="Voltar"
+            title={t('series.not_found')}
+            description={t('series.not_found_desc')}
+            actionLabel={t('common.back')}
             onAction={handleBack}
           />
         </View>
@@ -391,7 +393,7 @@ export default function SeriesScreen() {
               <View style={styles.metaItem}>
                 <Tv2 size={14} color={colors.mutedForeground} />
                 <Text style={styles.metaText}>
-                  {seasons.length} Temporada{seasons.length !== 1 ? 's' : ''}
+                  {seasons.length} {seasons.length !== 1 ? t('series.season_plural') : t('series.season_singular')}
                 </Text>
               </View>
             )}
@@ -399,7 +401,7 @@ export default function SeriesScreen() {
               <View style={styles.metaItem}>
                 <ListVideo size={14} color={colors.mutedForeground} />
                 <Text style={styles.metaText}>
-                  {totalEpisodes} Episódio{totalEpisodes !== 1 ? 's' : ''}
+                  {totalEpisodes} {totalEpisodes !== 1 ? t('series.episode_plural') : t('series.episode_singular')}
                 </Text>
               </View>
             )}
@@ -429,7 +431,7 @@ export default function SeriesScreen() {
             {hasEpisodes && (
               <Pressable style={styles.playButton} onPress={handlePlayFirst}>
                 <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.playButtonText}>Assistir S01E01</Text>
+                <Text style={styles.playButtonText}>{t('series.watch_first')}</Text>
               </Pressable>
             )}
 
@@ -451,7 +453,7 @@ export default function SeriesScreen() {
 
           {seasons.length > 0 && (
             <View style={styles.seasonsSection}>
-              <Text style={styles.sectionTitle}>Temporadas e Episódios</Text>
+              <Text style={styles.sectionTitle}>{t('series.seasons_section')}</Text>
 
               {seasons.map((season: Season) => (
                 <Card key={season.id} style={styles.seasonCard}>
@@ -461,10 +463,13 @@ export default function SeriesScreen() {
                   >
                     <View style={styles.seasonInfo}>
                       <Text style={styles.seasonTitle}>
-                        {season.name || `Temporada ${season.number}`}
+                        {season.name || t('series.season_fallback', { number: season.number })}
                       </Text>
                       <Text style={styles.seasonEpisodes}>
-                        {season.episodes?.length || 0} episódio{(season.episodes?.length || 0) !== 1 ? 's' : ''}
+                        {(() => {
+                          const count = season.episodes?.length || 0;
+                          return `${count} ${(count !== 1 ? t('series.episode_plural') : t('series.episode_singular')).toLowerCase()}`;
+                        })()}
                       </Text>
                     </View>
                     {expandedSeasons.has(season.number) ? (
@@ -489,7 +494,7 @@ export default function SeriesScreen() {
                           </View>
                           <View style={styles.episodeInfo}>
                             <Text style={styles.episodeName} numberOfLines={1}>
-                              {episode.name || `Episódio ${episode.number}`}
+                              {episode.name || t('series.episode_fallback', { number: episode.number })}
                             </Text>
                             <View style={styles.episodeMeta}>
                               {episode.quality && (
@@ -521,8 +526,8 @@ export default function SeriesScreen() {
           {!hasEpisodes && (
             <EmptyState
               icon={ListVideo}
-              title="Nenhum episódio disponível"
-              description="Esta série ainda não possui episódios cadastrados."
+              title={t('series.no_episodes_title')}
+              description={t('series.no_episodes_desc')}
             />
           )}
         </View>

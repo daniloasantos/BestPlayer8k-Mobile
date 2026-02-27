@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Star, Calendar, Tag } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { Skeleton, SkeletonText } from '@/components/ui';
+import { useLanguage } from '@/contexts';
 import type { TmdbMovieInfo } from '@/services/tmdb.service';
 
 interface MovieSynopsisProps {
@@ -14,6 +15,7 @@ const MAX_LINES = 4;
 
 export function MovieSynopsis({ info, isLoading }: MovieSynopsisProps) {
   const colors = useColors();
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
   const styles = StyleSheet.create({
@@ -142,7 +144,7 @@ export function MovieSynopsis({ info, isLoading }: MovieSynopsisProps) {
       {info.overview.length > 200 && (
         <Pressable style={styles.toggleButton} onPress={() => setExpanded((v) => !v)}>
           <Text style={styles.toggleText}>
-            {expanded ? 'Ver menos' : 'Ver mais'}
+            {expanded ? t('movies.see_less') : t('movies.see_more')}
           </Text>
         </Pressable>
       )}
