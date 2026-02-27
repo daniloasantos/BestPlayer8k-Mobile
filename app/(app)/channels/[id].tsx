@@ -13,8 +13,9 @@ import { ScreenContainer } from '@/components/layout';
 import { VideoPlayer } from '@/components/player';
 import { QualityBadge, Badge, Button, Loading, EmptyState } from '@/components/ui';
 import { HorizontalList } from '@/components/content';
-import { useChannel, useChannels, useMarkAsWatched, useToggleFavorite } from '@/hooks';
+import { useChannel, useChannels, useMarkAsWatched, useToggleFavorite, useMovieInfo } from '@/hooks';
 import { useFloatingPlayer } from '@/contexts';
+import { MovieSynopsis } from '@/components/content';
 import type { Channel } from '@/types';
 
 export default function ChannelScreen() {
@@ -44,6 +45,11 @@ export default function ChannelScreen() {
 
   const markAsWatched = useMarkAsWatched();
   const toggleFavorite = useToggleFavorite();
+
+  const { data: movieInfo, isLoading: loadingMovieInfo } = useMovieInfo(
+    channel?.name,
+    channel?.type === 'MOVIE',
+  );
 
   // Só busca conteúdo relacionado depois que o vídeo estiver pronto
   const {
@@ -313,6 +319,10 @@ export default function ChannelScreen() {
 
           {channel.description && (
             <Text style={styles.description}>{channel.description}</Text>
+          )}
+
+          {channel.type === 'MOVIE' && (
+            <MovieSynopsis info={movieInfo} isLoading={loadingMovieInfo} />
           )}
 
 

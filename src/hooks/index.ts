@@ -35,3 +35,4 @@ export {
 } from './useSeries';
 
 export { useAndroidNavigationBar } from './useAndroidNavigationBar';
+export { useMovieInfo } from './useMovieInfo';
