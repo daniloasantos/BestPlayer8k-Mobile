@@ -56,6 +56,8 @@ export function VideoPlayer({
   const [durationMs, setDurationMs] = useState(0);
   const [bufferedMs, setBufferedMs] = useState(0);
   const [autoRetryCount, setAutoRetryCount] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
   const isFullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
 
@@ -109,6 +111,14 @@ export function VideoPlayer({
     const timeSub = player.addListener('timeUpdate', ({ currentTime, bufferedPosition }) => {
       setPositionMs(Math.round(currentTime * 1000));
       setBufferedMs(Math.round((bufferedPosition ?? 0) * 1000));
+      // Duration may arrive late for HLS VOD streams — keep it in sync
+      const dur = player.duration;
+      if (dur && dur > 0) {
+        setDurationMs(prev => {
+          const next = Math.round(dur * 1000);
+          return next !== prev ? next : prev;
+        });
+      }
     });
 
     const endSub = player.addListener('playToEnd', () => {
@@ -122,6 +132,18 @@ export function VideoPlayer({
       endSub.remove();
     };
   }, [player]);
+
+  // Poll currentTime while playing for smooth real-time updates (timeUpdate interval may be too coarse)
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => {
+      const t = player.currentTime;
+      if (typeof t === 'number' && t > 0) {
+        setPositionMs(Math.round(t * 1000));
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [isPlaying, player]);
 
   // Auto-retry once on transient errors (network hiccups, segment timeouts)
   useEffect(() => {
@@ -199,9 +221,18 @@ export function VideoPlayer({
     if (isPlaying) { player.pause(); } else { player.play(); }
   };
 
-  const handleSeek = (valueMs: number) => { player.currentTime = valueMs / 1000; };
-  const handleSkipBack = () => { player.seekBy(-10); };
-  const handleSkipForward = () => { player.seekBy(10); };
+  const handleSeek = (valueMs: number) => {
+    player.currentTime = valueMs / 1000;
+    setPositionMs(valueMs); // optimistic update — avoids snap-back before timeUpdate fires
+  };
+  const handleSkipBack = () => {
+    player.seekBy(-10);
+    setPositionMs(prev => Math.max(0, prev - 10_000));
+  };
+  const handleSkipForward = () => {
+    player.seekBy(10);
+    setPositionMs(prev => Math.min(durationMs > 0 ? durationMs : prev + 10_000, prev + 10_000));
+  };
 
   const handleFullscreenToggle = useCallback(() => {
     if (onFullscreenToggle) { onFullscreenToggle(); }
@@ -216,6 +247,28 @@ export function VideoPlayer({
     player.replace({ uri });
     if (autoPlay) player.play();
   };
+
+  // Pause auto-hide while scrubbing the seek bar
+  const handleSeekStart = useCallback(() => {
+    if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+  }, []);
+
+  const handleSeekEnd = useCallback(() => {
+    if (isPlaying) {
+      controlsTimeout.current = setTimeout(() => setShowControls(false), 4000);
+    }
+  }, [isPlaying]);
+
+  const handleMuteToggle = useCallback(() => {
+    const next = !isMuted;
+    player.muted = next;
+    setIsMuted(next);
+  }, [isMuted, player]);
+
+  const handlePlaybackRateChange = useCallback((rate: number) => {
+    player.playbackRate = rate;
+    setPlaybackRate(rate);
+  }, [player]);
 
   const handleBack = useCallback(() => {
     if (isFullscreen) { handleFullscreenToggle(); }
@@ -273,30 +326,38 @@ export function VideoPlayer({
         contentFit="contain"
       />
 
-      <Pressable style={styles.touchArea} onPress={handleTouchScreen}>
-        {showSpinner && isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        )}
+      {/* Tap-to-toggle area — sits under PlayerControls; only fires when controls are hidden */}
+      <Pressable style={styles.touchArea} onPress={handleTouchScreen} />
 
-        {showControls && !isLoading && (
-          <PlayerControls
-            isPlaying={isPlaying}
-            position={positionMs}
-            duration={durationMs}
-            buffered={bufferedMs}
-            title={title}
-            isFullscreen={isFullscreen}
-            onPlayPause={handlePlayPause}
-            onSeek={handleSeek}
-            onSkipBack={handleSkipBack}
-            onSkipForward={handleSkipForward}
-            onFullscreenToggle={handleFullscreenToggle}
-            onBack={handleBack}
-          />
-        )}
-      </Pressable>
+      {showSpinner && isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
+
+      {showControls && !isLoading && (
+        <PlayerControls
+          isPlaying={isPlaying}
+          position={positionMs}
+          duration={durationMs}
+          buffered={bufferedMs}
+          title={title}
+          isFullscreen={isFullscreen}
+          onPlayPause={handlePlayPause}
+          onSeek={handleSeek}
+          onSkipBack={handleSkipBack}
+          onSkipForward={handleSkipForward}
+          onFullscreenToggle={handleFullscreenToggle}
+          onBack={handleBack}
+          isMuted={isMuted}
+          onMuteToggle={handleMuteToggle}
+          playbackRate={playbackRate}
+          onPlaybackRateChange={handlePlaybackRateChange}
+          onToggleVisibility={handleTouchScreen}
+          onSeekStart={handleSeekStart}
+          onSeekEnd={handleSeekEnd}
+        />
+      )}
     </View>
   );
 }
