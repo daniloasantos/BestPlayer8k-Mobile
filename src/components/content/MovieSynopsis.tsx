@@ -21,6 +21,7 @@ export function MovieSynopsis({ info, isLoading }: MovieSynopsisProps) {
   const styles = StyleSheet.create({
     container: {
       marginTop: spacing.md,
+      marginBottom: spacing.lg,
     },
     metaRow: {
       flexDirection: 'row',

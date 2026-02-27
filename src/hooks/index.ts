@@ -36,3 +36,5 @@ export {
 
 export { useAndroidNavigationBar } from './useAndroidNavigationBar';
 export { useMovieInfo } from './useMovieInfo';
+export { useSeriesInfo } from './useSeriesInfo';
+export { useEpisodeInfo } from './useEpisodeInfo';

@@ -10,7 +10,8 @@ import {
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { VideoPlayer } from '@/components/player';
 import { QualityBadge, Badge, Loading, EmptyState } from '@/components/ui';
-import { useSeriesDetail, useMarkAsWatched, useToggleFavorite } from '@/hooks';
+import { MovieSynopsis } from '@/components/content';
+import { useSeriesDetail, useMarkAsWatched, useToggleFavorite, useEpisodeInfo } from '@/hooks';
 import { useFloatingPlayer, useLanguage } from '@/contexts';
 import type { Episode } from '@/types';
 
@@ -230,6 +231,14 @@ export default function EpisodePlayerScreen() {
   const displayEpisodeNumber = currentEpisode?.number?.toString() || episodeNumber || '1';
   const episodeQuality = currentEpisode?.quality;
 
+  const seasonNum = currentEpisode?.season ?? parseInt(displaySeason, 10);
+  const episodeNum = currentEpisode?.number ?? parseInt(displayEpisodeNumber, 10);
+  const { data: episodeInfo, isLoading: loadingEpisodeInfo } = useEpisodeInfo(
+    series?.name,
+    seasonNum,
+    episodeNum,
+  );
+
   if (!displayStreamUrl) {
     return (
       <View style={styles.container}>
@@ -310,6 +319,8 @@ export default function EpisodePlayerScreen() {
               {t('series.episode_badge', { number: displayEpisodeNumber })}
             </Badge>
           </View>
+
+          <MovieSynopsis info={episodeInfo} isLoading={loadingEpisodeInfo} />
 
           {/* Episode Navigation */}
           <View style={styles.navigation}>

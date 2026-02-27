@@ -15,7 +15,8 @@ import {
 } from 'lucide-react-native';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { QualityBadge, Badge, Loading, EmptyState, Card } from '@/components/ui';
-import { useSeriesDetail, useToggleFavorite } from '@/hooks';
+import { MovieSynopsis } from '@/components/content';
+import { useSeriesDetail, useToggleFavorite, useSeriesInfo } from '@/hooks';
 import { useLanguage } from '@/contexts';
 import type { Season, Episode } from '@/types';
 
@@ -36,6 +37,8 @@ export default function SeriesScreen() {
   const toggleFavorite = useToggleFavorite();
   const [isFav, setIsFav] = useState(false);
   useEffect(() => { setIsFav(series?.isFavorite ?? false); }, [series?.isFavorite]);
+
+  const { data: seriesInfo, isLoading: loadingSeriesInfo } = useSeriesInfo(series?.name);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -426,6 +429,8 @@ export default function SeriesScreen() {
           {series.description && (
             <Text style={styles.description}>{series.description}</Text>
           )}
+
+          <MovieSynopsis info={seriesInfo} isLoading={loadingSeriesInfo} />
 
           <View style={styles.actions}>
             {hasEpisodes && (
