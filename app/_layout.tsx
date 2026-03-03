@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryProvider } from '../src/providers';
 import { ThemeProvider, useTheme } from '../src/theme';
-import { FullscreenProvider, FloatingPlayerProvider, LanguageProvider } from '../src/contexts';
+import { FullscreenProvider, FloatingPlayerProvider, LanguageProvider, SubscriptionProvider } from '../src/contexts';
 import { useAuthStore } from '../src/stores';
 import { useAndroidNavigationBar } from '../src/hooks';
 import { FloatingPlayer } from '../src/components/player';
@@ -40,7 +40,9 @@ export default function RootLayout() {
           <FullscreenProvider>
             <FloatingPlayerProvider>
               <QueryProvider>
-                <RootLayoutContent />
+                <SubscriptionProvider>
+                  <RootLayoutContent />
+                </SubscriptionProvider>
               </QueryProvider>
             </FloatingPlayerProvider>
           </FullscreenProvider>

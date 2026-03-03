@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
+import { View } from 'react-native';
 import { Home, Tv, Library, Heart, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../../src/theme';
 import { useFullscreen, useLanguage } from '../../src/contexts';
 import { useAutoActivatePlaylist } from '../../src/hooks';
+import TrialBanner from '../../src/components/subscription/TrialBanner';
 
 export default function AppLayout() {
   const colors = useColors();
@@ -15,6 +17,7 @@ export default function AppLayout() {
   useAutoActivatePlaylist();
 
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -101,6 +104,20 @@ export default function AppLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="plans"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="subscription"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
+    <TrialBanner />
+    </View>
   );
 }

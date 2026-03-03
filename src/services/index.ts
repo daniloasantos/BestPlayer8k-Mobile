@@ -17,3 +17,17 @@ export { seriesService } from './series.service';
 export { favoritesService } from './favorites.service';
 export { playlistsService } from './playlists.service';
 export type { CreatePlaylistData } from './playlists.service';
+
+export { subscriptionService } from './subscription.service';
+export type {
+  Plan,
+  Subscription,
+  AccessStatus,
+  CheckoutResponse,
+  SubscriptionStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from './subscription.service';
+
+export { trialService } from './trial.service';
+export type { TrialStatus } from './trial.service';

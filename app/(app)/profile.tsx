@@ -13,6 +13,7 @@ import {
   Globe,
   Users,
   ChevronDown,
+  CreditCard,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/stores';
 import { useColors, useTheme, spacing, borderRadius, typography } from '@/theme';
@@ -362,6 +363,23 @@ export default function ProfileScreen() {
               label={t('settings.language')}
               value={getLanguageLabel()}
               onPress={() => setShowLanguageSelector(true)}
+            />
+          </Card>
+        </View>
+
+        {/* Subscription Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Assinatura</Text>
+          <Card style={styles.menuCard}>
+            <MenuItem
+              icon={CreditCard}
+              label="Minha assinatura"
+              onPress={() => router.push('/subscription')}
+            />
+            <MenuItem
+              icon={CreditCard}
+              label="Ver planos"
+              onPress={() => router.push('/plans')}
             />
           </Card>
         </View>
