@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { authService, RegisterResponse } from '@/services';
 import { storage } from '@/services/storage';
 import type { User, Profile } from '@/types';
+import type { AccessStatus } from '@/services/subscription.service';
+import { notificationsService } from '@/services/notifications.service';
 
 const SELECTED_PROFILE_KEY = 'selected_profile_id';
 
@@ -11,9 +13,11 @@ interface AuthState {
   isAuthenticated: boolean;
   pendingVerificationEmail: string | null;
   selectedProfileId: string | null;
+  subscriptionStatus: AccessStatus | null;
 
   // Actions
   setUser: (user: User | null) => void;
+  setSubscriptionStatus: (status: AccessStatus | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
@@ -29,8 +33,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   pendingVerificationEmail: null,
   selectedProfileId: null,
+  subscriptionStatus: null,
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setSubscriptionStatus: (subscriptionStatus) => set({ subscriptionStatus }),
 
   login: async (email, password) => {
     set({ isLoading: true });
@@ -55,6 +61,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pendingVerificationEmail: null,
         selectedProfileId: validProfileId,
       });
+      // Register push token (best-effort, non-blocking)
+      notificationsService.registerPushToken().catch(() => {});
     } finally {
       set({ isLoading: false });
     }
@@ -76,7 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await authService.logout();
       await storage.removeItem(SELECTED_PROFILE_KEY);
-      set({ user: null, isAuthenticated: false, selectedProfileId: null });
+      set({ user: null, isAuthenticated: false, selectedProfileId: null, subscriptionStatus: null });
     } finally {
       set({ isLoading: false });
     }

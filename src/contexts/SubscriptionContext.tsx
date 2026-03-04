@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { subscriptionService } from '../services/subscription.service';
 import type { AccessStatus } from '../services/subscription.service';
 import { useAuthStore } from '../stores/auth.store';
+import { subscriptionEvents } from '../services/api';
 
 interface SubscriptionContextValue {
   accessStatus: AccessStatus | null;
@@ -31,6 +32,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const setSubscriptionStatus = useAuthStore((state) => state.setSubscriptionStatus);
   const router = useRouter();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
@@ -41,12 +43,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const status = await subscriptionService.getAccessStatus();
       if (!mountedRef.current) return;
       setAccessStatus(status);
+      setSubscriptionStatus(status);
     } catch {
       // Silencioso — não bloquear UX por falha de rede
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, setSubscriptionStatus]);
 
   const refresh = useCallback(async () => {
     await fetchStatus();
@@ -74,7 +77,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     };
   }, [isAuthenticated, fetchStatus]);
 
-  // Interceptor de 403 — redireciona para /plans quando bloqueado
+  // Interceptor de 403 — redireciona para /plans quando bloqueado via polling
   useEffect(() => {
     if (!accessStatus) return;
     if (!accessStatus.canAccess && accessStatus.status) {
@@ -84,6 +87,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       }
     }
   }, [accessStatus, router]);
+
+  // Interceptor de 403 — redireciona para /plans quando API retorna 403 com código de assinatura
+  useEffect(() => {
+    const unsubscribe = subscriptionEvents.onBlocked((code) => {
+      if (BLOCKED_CODES.includes(code)) {
+        router.replace('/plans');
+      }
+    });
+    return unsubscribe;
+  }, [router]);
 
   return (
     <SubscriptionContext.Provider value={{ accessStatus, loading, refresh }}>

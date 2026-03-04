@@ -31,3 +31,9 @@ export type {
 
 export { trialService } from './trial.service';
 export type { TrialStatus } from './trial.service';
+
+export { paymentService } from './payment.service';
+export type { Payment, PaginatedPayments } from './payment.service';
+
+export { notificationsService } from './notifications.service';
+export type { PushToken } from './notifications.service';

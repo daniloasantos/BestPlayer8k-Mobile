@@ -30,12 +30,34 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Emitter simples para eventos de assinatura bloqueada (substitui window.dispatchEvent no RN)
+type SubscriptionBlockedListener = (code: string) => void;
+const subscriptionBlockedListeners: SubscriptionBlockedListener[] = [];
+
+export const subscriptionEvents = {
+  onBlocked(listener: SubscriptionBlockedListener) {
+    subscriptionBlockedListeners.push(listener);
+    return () => {
+      const idx = subscriptionBlockedListeners.indexOf(listener);
+      if (idx !== -1) subscriptionBlockedListeners.splice(idx, 1);
+    };
+  },
+  emit(code: string) {
+    subscriptionBlockedListeners.forEach((fn) => fn(code));
+  },
+};
+
 // Response interceptor - trata erros globalmente
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       await storage.removeItem('auth_token');
+    }
+    if (error.response?.status === 403) {
+      const data = error.response.data as { code?: string } | undefined;
+      const code = data?.code || 'SUBSCRIPTION_REQUIRED';
+      subscriptionEvents.emit(code);
     }
     return Promise.reject(error);
   }

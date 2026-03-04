@@ -10,16 +10,14 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Linking from 'expo-linking';
-import { CreditCard, Star, Zap, CheckCircle2, Gift } from 'lucide-react-native';
+import { CreditCard, Zap, CheckCircle2, Gift } from 'lucide-react-native';
 import { subscriptionService } from '@/services/subscription.service';
+import { notificationsService } from '@/services/notifications.service';
 import { trialService } from '@/services/trial.service';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
 import { ScreenContainer, Header } from '@/components/layout';
 import type { Plan } from '@/services/subscription.service';
-
-const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://bestplayer8k.com';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -231,12 +229,9 @@ export default function PlansScreen() {
   }, [refresh, router]);
 
   const handleSubscribe = useCallback((plan: Plan) => {
-    // Abre o checkout no browser externo (evita taxa Apple/Google)
-    const url = `${FRONTEND_URL}/checkout/${plan.slug}`;
-    Linking.openURL(url).catch(() =>
-      Alert.alert('Erro', 'Não foi possível abrir o navegador. Acesse bestplayer8k.com/checkout/' + plan.slug)
-    );
-  }, []);
+    // Navega para a tela de checkout (que abre o browser externo + faz polling)
+    router.push(`/checkout/${plan.slug}`);
+  }, [router]);
 
   const styles = StyleSheet.create({
     content: {

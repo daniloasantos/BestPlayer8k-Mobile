@@ -116,6 +116,12 @@ export default function AppLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="checkout/[planSlug]"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
     <TrialBanner />
     </View>
