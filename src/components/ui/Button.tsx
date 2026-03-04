@@ -183,7 +183,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '700',
-    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   leftIcon: {
