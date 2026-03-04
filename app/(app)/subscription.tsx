@@ -17,30 +17,16 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
-  ChevronRight,
   RefreshCw,
 } from 'lucide-react-native';
 import { subscriptionService } from '@/services/subscription.service';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
+import { useLanguage } from '@/contexts';
 import { ScreenContainer, Header } from '@/components/layout';
-import type { Subscription, SubscriptionStatus } from '@/services/subscription.service';
+import type { Subscription } from '@/services/subscription.service';
 
-// ─── Types / Helpers ──────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; icon: typeof CheckCircle2 }
-> = {
-  ACTIVE:        { label: 'Ativa',                 color: '#34d399', icon: CheckCircle2 },
-  LIFETIME:      { label: 'Vitalícia',             color: '#fbbf24', icon: CheckCircle2 },
-  TRIAL:         { label: 'Trial gratuito',        color: '#60a5fa', icon: CheckCircle2 },
-  TRIAL_EXPIRED: { label: 'Trial expirado',        color: '#94a3b8', icon: XCircle },
-  PAST_DUE:      { label: 'Pagamento pendente',    color: '#fbbf24', icon: AlertTriangle },
-  CANCELED:      { label: 'Cancelada',             color: '#f87171', icon: XCircle },
-  EXPIRED:       { label: 'Expirada',              color: '#94a3b8', icon: XCircle },
-  PENDING:       { label: 'Aguardando pagamento',  color: '#fbbf24', icon: Clock },
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -71,6 +57,7 @@ function InfoRow({ label, value, accent }: { label: string; value: string; accen
 export default function SubscriptionScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const { refresh } = useSubscription();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -81,12 +68,26 @@ export default function SubscriptionScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const STATUS_CONFIG: Record<
+    string,
+    { label: string; color: string; icon: typeof CheckCircle2 }
+  > = {
+    ACTIVE:        { label: t('subscription.status_active'),        color: '#34d399', icon: CheckCircle2 },
+    LIFETIME:      { label: t('subscription.status_lifetime'),      color: '#fbbf24', icon: CheckCircle2 },
+    TRIAL:         { label: t('subscription.status_trial'),         color: '#60a5fa', icon: CheckCircle2 },
+    TRIAL_EXPIRED: { label: t('subscription.status_trial_expired'), color: '#94a3b8', icon: XCircle },
+    PAST_DUE:      { label: t('subscription.status_past_due'),      color: '#fbbf24', icon: AlertTriangle },
+    CANCELED:      { label: t('subscription.status_canceled'),      color: '#f87171', icon: XCircle },
+    EXPIRED:       { label: t('subscription.status_expired'),       color: '#94a3b8', icon: XCircle },
+    PENDING:       { label: t('subscription.status_pending'),       color: '#fbbf24', icon: Clock },
+  };
+
   const loadSubscription = useCallback(async () => {
     try {
       const data = await subscriptionService.getCurrentSubscription();
       setSubscription(data.subscription ?? null);
     } catch {
-      // Silencioso
+      // silent
     } finally {
       setLoading(false);
     }
@@ -102,12 +103,12 @@ export default function SubscriptionScreen() {
       setError('');
       try {
         await subscriptionService.cancel(cancelReason || undefined);
-        setSuccess('Assinatura cancelada. Seu acesso permanece até o fim do período pago.');
+        setSuccess(t('subscription.cancel_success'));
         setShowCancelConfirm(false);
         await refresh();
         await loadSubscription();
       } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Erro ao cancelar. Tente novamente.';
+        const msg = err?.response?.data?.message || t('subscription.cancel_error');
         setError(msg);
       } finally {
         setCanceling(false);
@@ -115,18 +116,18 @@ export default function SubscriptionScreen() {
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('Confirmar cancelamento da assinatura?')) doCancel();
+      if (window.confirm(t('subscription.cancel_confirm_web'))) doCancel();
     } else {
       Alert.alert(
-        'Cancelar assinatura',
-        `Ao cancelar, você mantém acesso até ${formatDate(subscription?.expiresAt)}. Confirmar?`,
+        t('subscription.cancel_alert_title'),
+        t('subscription.cancel_alert_msg', { date: formatDate(subscription?.expiresAt) }),
         [
-          { text: 'Manter assinatura', style: 'cancel' },
-          { text: 'Cancelar assinatura', style: 'destructive', onPress: doCancel },
+          { text: t('subscription.cancel_alert_keep'), style: 'cancel' },
+          { text: t('subscription.cancel_alert_confirm'), style: 'destructive', onPress: doCancel },
         ]
       );
     }
-  }, [cancelReason, refresh, loadSubscription, subscription]);
+  }, [t, cancelReason, refresh, loadSubscription, subscription]);
 
   const statusConfig = subscription
     ? (STATUS_CONFIG[subscription.status] ?? { label: subscription.status, color: colors.mutedForeground, icon: Clock })
@@ -282,7 +283,7 @@ export default function SubscriptionScreen() {
   if (loading) {
     return (
       <ScreenContainer>
-        <Header title="Minha Assinatura" icon={CreditCard} />
+        <Header title={t('subscription.screen_title')} icon={CreditCard} />
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -292,7 +293,7 @@ export default function SubscriptionScreen() {
 
   return (
     <ScreenContainer>
-      <Header title="Minha Assinatura" icon={CreditCard} />
+      <Header title={t('subscription.screen_title')} icon={CreditCard} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
@@ -317,7 +318,7 @@ export default function SubscriptionScreen() {
           }}
         >
           <RefreshCw size={14} color={colors.primary} />
-          <Text style={styles.refreshText}>Atualizar</Text>
+          <Text style={styles.refreshText}>{t('subscription.btn_refresh')}</Text>
         </Pressable>
 
         {!subscription ? (
@@ -325,13 +326,13 @@ export default function SubscriptionScreen() {
           <View style={styles.emptyCard}>
             <CreditCard size={48} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { marginTop: spacing.md }]}>
-              Você não possui uma assinatura ativa.
+              {t('subscription.no_subscription')}
             </Text>
             <Pressable
               style={({ pressed }) => [styles.primaryButton, { opacity: pressed ? 0.8 : 1, alignSelf: 'stretch' }]}
               onPress={() => router.push('/plans')}
             >
-              <Text style={styles.primaryButtonText}>Ver planos disponíveis</Text>
+              <Text style={styles.primaryButtonText}>{t('subscription.btn_see_plans')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -339,7 +340,7 @@ export default function SubscriptionScreen() {
             {/* Status card */}
             <View style={styles.statusCard}>
               <View style={styles.statusHeader}>
-                <Text style={styles.cardTitle}>Status da assinatura</Text>
+                <Text style={styles.cardTitle}>{t('subscription.status_card_title')}</Text>
                 {statusConfig && (
                   <View style={styles.badgeContainer}>
                     <statusConfig.icon size={14} color={statusConfig.color} />
@@ -351,21 +352,21 @@ export default function SubscriptionScreen() {
               </View>
 
               <View style={styles.infoGrid}>
-                <InfoRow label="Plano" value={subscription.plan?.name ?? 'Trial'} />
-                <InfoRow label="Início" value={formatDate(subscription.startedAt)} />
+                <InfoRow label={t('subscription.field_plan')} value={subscription.plan?.name ?? t('subscription.trial_plan_name')} />
+                <InfoRow label={t('subscription.field_started')} value={formatDate(subscription.startedAt)} />
                 {!subscription.plan?.isLifetime && (
-                  <InfoRow label="Expira em" value={formatDate(subscription.expiresAt)} />
+                  <InfoRow label={t('subscription.field_expires')} value={formatDate(subscription.expiresAt)} />
                 )}
                 {subscription.gracePeriodEndsAt && (
                   <InfoRow
-                    label="Carência até"
+                    label={t('subscription.field_grace')}
                     value={formatDate(subscription.gracePeriodEndsAt)}
                     accent="#fbbf24"
                   />
                 )}
                 {subscription.canceledAt && (
                   <InfoRow
-                    label="Cancelada em"
+                    label={t('subscription.field_canceled')}
                     value={formatDate(subscription.canceledAt)}
                     accent="#f87171"
                   />
@@ -381,8 +382,8 @@ export default function SubscriptionScreen() {
               >
                 <Text style={styles.primaryButtonText}>
                   {subscription.status === 'ACTIVE' || subscription.status === 'LIFETIME'
-                    ? 'Mudar de plano'
-                    : 'Ver planos'}
+                    ? t('subscription.btn_change_plan')
+                    : t('subscription.btn_see_plans_short')}
                 </Text>
               </Pressable>
 
@@ -397,7 +398,7 @@ export default function SubscriptionScreen() {
                     }
                   }}
                 >
-                  <Text style={styles.dangerButtonText}>Cancelar</Text>
+                  <Text style={styles.dangerButtonText}>{t('subscription.btn_cancel')}</Text>
                 </Pressable>
               )}
             </View>
@@ -405,18 +406,14 @@ export default function SubscriptionScreen() {
             {/* Cancel confirmation (web only) */}
             {showCancelConfirm && Platform.OS === 'web' && (
               <View style={styles.cancelCard}>
-                <Text style={styles.cancelTitle}>Confirmar cancelamento</Text>
+                <Text style={styles.cancelTitle}>{t('subscription.cancel_title')}</Text>
                 <Text style={styles.cancelDesc}>
-                  Ao cancelar, você mantém acesso até{' '}
-                  <Text style={{ fontWeight: '700', color: colors.foreground }}>
-                    {formatDate(subscription.expiresAt)}
-                  </Text>
-                  . Após essa data o acesso será encerrado.
+                  {t('subscription.cancel_desc', { date: formatDate(subscription.expiresAt) })}
                 </Text>
                 <TextInput
                   value={cancelReason}
                   onChangeText={setCancelReason}
-                  placeholder="Motivo do cancelamento (opcional)"
+                  placeholder={t('subscription.cancel_reason_placeholder')}
                   placeholderTextColor={colors.mutedForeground}
                   multiline
                   style={styles.textInput}
@@ -429,7 +426,7 @@ export default function SubscriptionScreen() {
                   >
                     {canceling
                       ? <ActivityIndicator size="small" color="#ef4444" />
-                      : <Text style={styles.dangerButtonText}>Confirmar</Text>
+                      : <Text style={styles.dangerButtonText}>{t('subscription.btn_confirm_cancel')}</Text>
                     }
                   </Pressable>
                   <Pressable
@@ -440,7 +437,7 @@ export default function SubscriptionScreen() {
                     onPress={() => setShowCancelConfirm(false)}
                   >
                     <Text style={[styles.primaryButtonText, { color: colors.foreground }]}>
-                      Manter
+                      {t('subscription.btn_keep')}
                     </Text>
                   </Pressable>
                 </View>

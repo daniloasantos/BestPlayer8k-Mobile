@@ -13,6 +13,7 @@ import { ExternalLink, CheckCircle2, ArrowLeft, RefreshCw } from 'lucide-react-n
 import { subscriptionService } from '@/services/subscription.service';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
+import { useLanguage } from '@/contexts';
 import { ScreenContainer, Header } from '@/components/layout';
 
 const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://bestplayer8k.com';
@@ -25,6 +26,7 @@ export default function CheckoutScreen() {
   const { planSlug } = useLocalSearchParams<{ planSlug: string }>();
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const { refresh } = useSubscription();
 
   const [phase, setPhase] = useState<Phase>('opening');
@@ -45,12 +47,12 @@ export default function CheckoutScreen() {
       })
       .catch(() => {
         Alert.alert(
-          'Erro',
-          `Não foi possível abrir o navegador. Acesse: ${url}`,
+          t('common.error'),
+          t('checkout.error_browser', { url }),
           [{ text: 'OK' }]
         );
       });
-  }, [planSlug]);
+  }, [planSlug, t]);
 
   // Polls access-status every 5s to detect payment confirmation
   const startPolling = useCallback(() => {
@@ -182,7 +184,7 @@ export default function CheckoutScreen() {
 
   return (
     <ScreenContainer>
-      <Header title="Checkout" icon={ExternalLink} />
+      <Header title={t('checkout.screen_title')} icon={ExternalLink} />
 
       <View style={styles.content}>
         {phase === 'opening' && (
@@ -190,10 +192,8 @@ export default function CheckoutScreen() {
             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
               <ActivityIndicator size="large" color={colors.primary} />
             </View>
-            <Text style={styles.title}>Abrindo navegador...</Text>
-            <Text style={styles.subtitle}>
-              Você será redirecionado para concluir o pagamento com segurança.
-            </Text>
+            <Text style={styles.title}>{t('checkout.opening_title')}</Text>
+            <Text style={styles.subtitle}>{t('checkout.opening_desc')}</Text>
           </>
         )}
 
@@ -202,15 +202,11 @@ export default function CheckoutScreen() {
             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
               <ActivityIndicator size="large" color={colors.primary} />
             </View>
-            <Text style={styles.title}>Aguardando confirmação...</Text>
-            <Text style={styles.subtitle}>
-              Conclua o pagamento no navegador. Seu acesso será liberado automaticamente assim que o pagamento for confirmado.
-            </Text>
+            <Text style={styles.title}>{t('checkout.waiting_title')}</Text>
+            <Text style={styles.subtitle}>{t('checkout.waiting_desc')}</Text>
 
             <View style={styles.noteCard}>
-              <Text style={styles.noteText}>
-                Não feche essa tela. Verificando a cada 5 segundos...
-              </Text>
+              <Text style={styles.noteText}>{t('checkout.waiting_note')}</Text>
             </View>
 
             {browserOpened && (
@@ -219,7 +215,7 @@ export default function CheckoutScreen() {
                 onPress={handleRetryBrowser}
               >
                 <ExternalLink size={16} color={colors.foreground} />
-                <Text style={styles.secondaryButtonText}>Reabrir navegador</Text>
+                <Text style={styles.secondaryButtonText}>{t('checkout.btn_reopen_browser')}</Text>
               </Pressable>
             )}
 
@@ -232,7 +228,7 @@ export default function CheckoutScreen() {
             >
               <ArrowLeft size={16} color={colors.mutedForeground} />
               <Text style={[styles.secondaryButtonText, { color: colors.mutedForeground }]}>
-                Cancelar e voltar
+                {t('checkout.btn_cancel_back')}
               </Text>
             </Pressable>
           </>
@@ -243,15 +239,13 @@ export default function CheckoutScreen() {
             <View style={[styles.iconContainer, { backgroundColor: '#34d39920' }]}>
               <CheckCircle2 size={48} color="#34d399" />
             </View>
-            <Text style={styles.title}>Pagamento confirmado!</Text>
-            <Text style={styles.subtitle}>
-              Seu acesso foi ativado. Aproveite todos os canais HD e 4K!
-            </Text>
+            <Text style={styles.title}>{t('checkout.confirmed_title')}</Text>
+            <Text style={styles.subtitle}>{t('checkout.confirmed_desc')}</Text>
             <Pressable
               style={({ pressed }) => [styles.primaryButton, { opacity: pressed ? 0.8 : 1 }]}
               onPress={handleGoHome}
             >
-              <Text style={styles.primaryButtonText}>Ir para o início</Text>
+              <Text style={styles.primaryButtonText}>{t('checkout.btn_go_home')}</Text>
             </Pressable>
           </>
         )}
@@ -261,17 +255,15 @@ export default function CheckoutScreen() {
             <View style={[styles.iconContainer, { backgroundColor: colors.muted }]}>
               <RefreshCw size={48} color={colors.mutedForeground} />
             </View>
-            <Text style={styles.title}>Ainda aguardando...</Text>
-            <Text style={styles.subtitle}>
-              O pagamento ainda não foi confirmado. Se você já pagou, o acesso será liberado em instantes.
-            </Text>
+            <Text style={styles.title}>{t('checkout.timeout_title')}</Text>
+            <Text style={styles.subtitle}>{t('checkout.timeout_desc')}</Text>
 
             <Pressable
               style={({ pressed }) => [styles.primaryButton, { opacity: pressed ? 0.8 : 1 }]}
               onPress={handleRestartPolling}
             >
               <RefreshCw size={16} color="#fff" />
-              <Text style={styles.primaryButtonText}>Verificar novamente</Text>
+              <Text style={styles.primaryButtonText}>{t('checkout.btn_check_again')}</Text>
             </Pressable>
 
             <Pressable
@@ -279,7 +271,7 @@ export default function CheckoutScreen() {
               onPress={() => router.replace('/plans')}
             >
               <ArrowLeft size={16} color={colors.foreground} />
-              <Text style={styles.secondaryButtonText}>Voltar aos planos</Text>
+              <Text style={styles.secondaryButtonText}>{t('checkout.btn_back_to_plans')}</Text>
             </Pressable>
           </>
         )}

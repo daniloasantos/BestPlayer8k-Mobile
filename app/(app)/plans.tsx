@@ -16,222 +16,80 @@ import { notificationsService } from '@/services/notifications.service';
 import { trialService } from '@/services/trial.service';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useColors, spacing, borderRadius, typography } from '@/theme';
+import { useLanguage } from '@/contexts';
 import { ScreenContainer, Header } from '@/components/layout';
 import type { Plan } from '@/services/subscription.service';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatPrice(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-}
-
-function getPeriodSuffix(plan: Plan): string {
-  if (plan.isLifetime) return '/vitalício';
-  if (!plan.durationDays) return '';
-  if (plan.durationDays <= 31) return '/mês';
-  if (plan.durationDays <= 93) return '/trimestre';
-  if (plan.durationDays <= 186) return '/semestre';
-  return '/ano';
-}
-
-function getMonthlyEquivalent(plan: Plan): string | null {
-  if (!plan.durationDays || plan.durationDays <= 31 || plan.isLifetime) return null;
-  const months = plan.durationDays / 30;
-  const monthlyPrice = plan.priceInCents / months;
-  return `${formatPrice(Math.round(monthlyPrice))}/mês`;
-}
-
-function isPopular(plan: Plan): boolean {
-  return plan.slug === 'anual' || plan.slug === 'annual';
-}
-
-// ─── PlanCard Component ────────────────────────────────────────────────────
-
-interface PlanCardProps {
-  plan: Plan;
-  isActive: boolean;
-  onSubscribe: (plan: Plan) => void;
-  colors: ReturnType<typeof useColors>;
-}
-
-function PlanCard({ plan, isActive, onSubscribe, colors }: PlanCardProps) {
-  const popular = isPopular(plan);
-  const monthlyEq = getMonthlyEquivalent(plan);
-
-  const styles = StyleSheet.create({
-    card: {
-      marginBottom: spacing.md,
-      borderRadius: borderRadius.xl,
-      borderWidth: popular ? 2 : 1,
-      borderColor: popular ? colors.primary : colors.border,
-      backgroundColor: popular ? colors.primary + '10' : colors.card,
-      overflow: 'hidden',
-    },
-    popularBadge: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      alignItems: 'center',
-    },
-    popularText: {
-      ...typography.label,
-      color: '#fff',
-      fontWeight: '700',
-    },
-    cardContent: {
-      padding: spacing.lg,
-    },
-    planName: {
-      ...typography.header,
-      color: colors.foreground,
-      marginBottom: spacing.xs,
-    },
-    priceRow: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: spacing.xs,
-      marginBottom: spacing.xs,
-    },
-    price: {
-      fontSize: 32,
-      fontWeight: '800',
-      color: colors.foreground,
-    },
-    priceSuffix: {
-      ...typography.body,
-      color: colors.mutedForeground,
-    },
-    monthlyEq: {
-      ...typography.label,
-      color: colors.primary,
-      marginBottom: spacing.lg,
-    },
-    features: {
-      gap: spacing.sm,
-      marginBottom: spacing.lg,
-    },
-    featureRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-    },
-    featureText: {
-      ...typography.body,
-      color: colors.foreground,
-      flex: 1,
-    },
-    button: {
-      borderRadius: borderRadius.lg,
-      paddingVertical: spacing.md,
-      alignItems: 'center',
-      backgroundColor: isActive ? colors.muted : colors.primary,
-    },
-    buttonText: {
-      ...typography.body,
-      fontWeight: '700',
-      color: isActive ? colors.mutedForeground : '#fff',
-    },
-  });
-
-  const defaultFeatures = plan.isLifetime
-    ? ['Acesso permanente', 'Todos os canais HD/4K', 'Sem renovação', 'Suporte prioritário']
-    : ['Todos os canais HD/4K', 'Multi-dispositivos', 'Filmes e séries', 'Suporte'];
-
-  const features = (plan as any).features ?? defaultFeatures;
-
-  return (
-    <View style={styles.card}>
-      {popular && (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularText}>MAIS POPULAR</Text>
-        </View>
-      )}
-      <View style={styles.cardContent}>
-        <Text style={styles.planName}>{plan.name}</Text>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatPrice(plan.priceInCents)}</Text>
-          <Text style={styles.priceSuffix}>{getPeriodSuffix(plan)}</Text>
-        </View>
-        {monthlyEq && <Text style={styles.monthlyEq}>Equivalente a {monthlyEq}</Text>}
-
-        <View style={styles.features}>
-          {features.map((f: string, i: number) => (
-            <View key={i} style={styles.featureRow}>
-              <CheckCircle2 size={16} color={colors.primary} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Pressable
-          style={({ pressed }) => [styles.button, { opacity: pressed || isActive ? 0.8 : 1 }]}
-          onPress={() => !isActive && onSubscribe(plan)}
-          disabled={isActive}
-        >
-          <Text style={styles.buttonText}>
-            {isActive ? 'Plano atual' : 'Assinar agora'}
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function PlansScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { t } = useLanguage();
   const { accessStatus, refresh } = useSubscription();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [trialLoading, setTrialLoading] = useState(false);
-  const [trialEligible, setTrialEligible] = useState(false);
+  const [activatingTrial, setActivatingTrial] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      subscriptionService.getPlans().then(setPlans),
-      trialService.getStatus().then((s) => setTrialEligible(s.eligible)).catch(() => {}),
-    ]).finally(() => setLoading(false));
+  const loadPlans = useCallback(async () => {
+    try {
+      const data = await subscriptionService.getPlans();
+      setPlans(data);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleActivateTrial = useCallback(async () => {
+  useEffect(() => {
+    loadPlans();
+  }, [loadPlans]);
+
+  const getPeriodLabel = (billingCycle: string | undefined, isLifetime: boolean | undefined) => {
+    if (isLifetime) return t('plans.period_lifetime');
+    switch (billingCycle) {
+      case 'MONTHLY':    return t('plans.period_month');
+      case 'QUARTERLY':  return t('plans.period_quarter');
+      case 'SEMESTER':   return t('plans.period_semester');
+      case 'YEARLY':     return t('plans.period_year');
+      default:           return '';
+    }
+  };
+
+  const handleSubscribe = useCallback((plan: Plan) => {
+    router.push(`/checkout/${plan.slug}`);
+  }, [router]);
+
+  const handleActivateTrial = useCallback(() => {
     const doActivate = async () => {
-      setTrialLoading(true);
+      setActivatingTrial(true);
       try {
-        await trialService.activate('mobile');
+        await trialService.activate();
         await refresh();
+        await notificationsService.scheduleTrialNotifications(
+          new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        );
         router.replace('/home');
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Erro ao ativar trial. Tente novamente.';
-        Alert.alert('Erro', msg);
+      } catch {
+        Alert.alert(t('common.error'), t('plans.trial_error'));
       } finally {
-        setTrialLoading(false);
+        setActivatingTrial(false);
       }
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('Ativar seu período de teste gratuito de 3 dias?')) doActivate();
+      if (window.confirm(t('plans.trial_alert_msg'))) doActivate();
     } else {
       Alert.alert(
-        'Ativar trial gratuito',
-        'Você terá 3 dias de acesso completo gratuitamente. Deseja continuar?',
+        t('plans.trial_alert_title'),
+        t('plans.trial_alert_msg'),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Ativar', onPress: doActivate },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('plans.trial_alert_activate'), onPress: doActivate },
         ]
       );
     }
-  }, [refresh, router]);
-
-  const handleSubscribe = useCallback((plan: Plan) => {
-    // Navega para a tela de checkout (que abre o browser externo + faz polling)
-    router.push(`/checkout/${plan.slug}`);
-  }, [router]);
+  }, [t, refresh, router]);
 
   const styles = StyleSheet.create({
     content: {
@@ -247,69 +105,145 @@ export default function PlansScreen() {
       ...typography.body,
       color: colors.mutedForeground,
       textAlign: 'center',
-      marginVertical: spacing.lg,
+      marginTop: spacing.sm,
+      marginBottom: spacing.xl,
+      paddingHorizontal: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.header,
+      color: colors.foreground,
+      marginBottom: spacing.md,
+    },
+    planCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    planCardPopular: {
+      borderColor: colors.primary,
+      borderWidth: 2,
+    },
+    popularBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs / 2,
+      marginBottom: spacing.sm,
+    },
+    popularBadgeText: {
+      ...typography.small,
+      color: '#fff',
+      fontWeight: '700',
+    },
+    planName: {
+      ...typography.header,
+      color: colors.foreground,
+      fontSize: 18,
+    },
+    planPrice: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: colors.foreground,
+      marginTop: spacing.xs,
+    },
+    planPeriod: {
+      ...typography.body,
+      color: colors.mutedForeground,
+    },
+    planMonthly: {
+      ...typography.small,
+      color: colors.mutedForeground,
+      marginTop: spacing.xs,
+    },
+    featureRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    featureText: {
+      ...typography.body,
+      color: colors.foreground,
+    },
+    subscribeButton: {
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      marginTop: spacing.lg,
+    },
+    subscribeButtonText: {
+      ...typography.body,
+      fontWeight: '700',
+      color: '#fff',
+    },
+    currentPlanBadge: {
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      backgroundColor: colors.muted,
+      marginTop: spacing.lg,
+    },
+    currentPlanText: {
+      ...typography.body,
+      color: colors.mutedForeground,
+      fontWeight: '600',
     },
     trialCard: {
       borderRadius: borderRadius.xl,
       borderWidth: 1,
-      borderColor: colors.primary + '40',
+      borderColor: colors.primary + '60',
       backgroundColor: colors.primary + '10',
       padding: spacing.lg,
       marginBottom: spacing.xl,
+      gap: spacing.sm,
+    },
+    trialRow: {
+      flexDirection: 'row',
       alignItems: 'center',
+      gap: spacing.sm,
     },
     trialTitle: {
       ...typography.header,
       color: colors.foreground,
-      marginTop: spacing.sm,
-      marginBottom: spacing.xs,
+      fontSize: 16,
     },
     trialDesc: {
       ...typography.body,
       color: colors.mutedForeground,
-      textAlign: 'center',
-      marginBottom: spacing.lg,
     },
     trialButton: {
       borderRadius: borderRadius.lg,
       paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
+      alignItems: 'center',
       backgroundColor: colors.primary,
       flexDirection: 'row',
-      alignItems: 'center',
+      justifyContent: 'center',
       gap: spacing.sm,
+      marginTop: spacing.xs,
     },
     trialButtonText: {
       ...typography.body,
       fontWeight: '700',
       color: '#fff',
     },
-    sectionTitle: {
-      ...typography.header,
-      color: colors.foreground,
-      marginBottom: spacing.lg,
-    },
-    noteCard: {
-      borderRadius: borderRadius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.muted,
-      padding: spacing.md,
-      marginTop: spacing.md,
-    },
-    noteText: {
+    paymentNote: {
       ...typography.small,
       color: colors.mutedForeground,
       textAlign: 'center',
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.md,
     },
   });
-
-  const activeStatus = accessStatus?.status;
 
   if (loading) {
     return (
       <ScreenContainer>
-        <Header title="Planos" icon={CreditCard} />
+        <Header title={t('plans.screen_title')} icon={CreditCard} />
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -317,63 +251,101 @@ export default function PlansScreen() {
     );
   }
 
+  const currentPlanSlug = accessStatus?.planSlug;
+
   return (
     <ScreenContainer>
-      <Header title="Planos" icon={CreditCard} />
+      <Header title={t('plans.screen_title')} icon={CreditCard} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={styles.subtitle}>
-          Acesso completo a todos os canais, filmes e séries em HD e 4K.
-        </Text>
+        <Text style={styles.subtitle}>{t('plans.subtitle')}</Text>
 
-        {/* Trial CTA */}
-        {trialEligible && (
+        {/* Trial card — only if user has no active plan */}
+        {!accessStatus?.canAccess && (
           <View style={styles.trialCard}>
-            <Gift size={32} color={colors.primary} />
-            <Text style={styles.trialTitle}>Experimente grátis por 3 dias</Text>
-            <Text style={styles.trialDesc}>
-              Sem necessidade de cartão. Acesse tudo gratuitamente por 3 dias.
-            </Text>
+            <View style={styles.trialRow}>
+              <Gift size={20} color={colors.primary} />
+              <Text style={styles.trialTitle}>{t('plans.trial_title')}</Text>
+            </View>
+            <Text style={styles.trialDesc}>{t('plans.trial_desc')}</Text>
             <Pressable
               style={({ pressed }) => [styles.trialButton, { opacity: pressed ? 0.8 : 1 }]}
               onPress={handleActivateTrial}
-              disabled={trialLoading}
+              disabled={activatingTrial}
             >
-              {trialLoading
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Zap size={18} color="#fff" />
-              }
+              {activatingTrial ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Zap size={16} color="#fff" />
+              )}
               <Text style={styles.trialButtonText}>
-                {trialLoading ? 'Ativando...' : 'Ativar trial gratuito'}
+                {activatingTrial ? t('plans.trial_btn_loading') : t('plans.trial_btn')}
               </Text>
             </Pressable>
           </View>
         )}
 
-        {/* Plans */}
-        <Text style={styles.sectionTitle}>Escolha seu plano</Text>
-        {plans
-          .sort((a, b) => a.displayOrder - b.displayOrder)
-          .map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              isActive={
-                (activeStatus === 'ACTIVE' || activeStatus === 'LIFETIME') &&
-                false // comparison with active plan id would require subscription data
-              }
-              onSubscribe={handleSubscribe}
-              colors={colors}
-            />
-          ))}
+        <Text style={styles.sectionTitle}>{t('plans.section_plans')}</Text>
 
-        {/* Note about external browser */}
-        <View style={styles.noteCard}>
-          <Text style={styles.noteText}>
-            O pagamento será concluído no seu navegador de forma segura.
-            Após a confirmação, volte ao app e seu acesso será liberado automaticamente.
-          </Text>
-        </View>
+        {plans.map((plan) => {
+          const isCurrentPlan = currentPlanSlug === plan.slug;
+          const periodLabel = getPeriodLabel(plan.billingCycle, plan.isLifetime);
+          const features: string[] = [];
+          if (plan.isLifetime) {
+            features.push(t('plans.feature_permanent'));
+            features.push(t('plans.feature_no_renewal'));
+            features.push(t('plans.feature_priority_support'));
+          }
+          features.push(t('plans.feature_hd_channels'));
+          features.push(t('plans.feature_movies_series'));
+          features.push(t('plans.feature_multidevice'));
+          features.push(t('plans.feature_support'));
+
+          return (
+            <View
+              key={plan.id}
+              style={[styles.planCard, plan.isPopular && styles.planCardPopular]}
+            >
+              {plan.isPopular && (
+                <View style={styles.popularBadge}>
+                  <Text style={styles.popularBadgeText}>{t('plans.popular_badge')}</Text>
+                </View>
+              )}
+              <Text style={styles.planName}>{plan.name}</Text>
+              <Text style={styles.planPrice}>
+                R$ {plan.price.toFixed(2).replace('.', ',')}
+                <Text style={styles.planPeriod}>{periodLabel}</Text>
+              </Text>
+              {plan.monthlyEquivalent && !plan.isLifetime && (
+                <Text style={styles.planMonthly}>
+                  {t('plans.monthly_equiv', { price: `R$ ${plan.monthlyEquivalent.toFixed(2).replace('.', ',')}` })}
+                </Text>
+              )}
+
+              {features.map((feat) => (
+                <View key={feat} style={styles.featureRow}>
+                  <CheckCircle2 size={16} color={colors.primary} />
+                  <Text style={styles.featureText}>{feat}</Text>
+                </View>
+              ))}
+
+              {isCurrentPlan ? (
+                <View style={styles.currentPlanBadge}>
+                  <Text style={styles.currentPlanText}>{t('plans.current_plan')}</Text>
+                </View>
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [styles.subscribeButton, { opacity: pressed ? 0.8 : 1 }]}
+                  onPress={() => handleSubscribe(plan)}
+                >
+                  <Text style={styles.subscribeButtonText}>{t('plans.btn_subscribe')}</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+
+        <Text style={styles.paymentNote}>{t('plans.payment_note')}</Text>
       </ScrollView>
     </ScreenContainer>
   );
