@@ -33,6 +33,7 @@ export default function PlansScreen() {
   const loadPlans = useCallback(async () => {
     try {
       const data = await subscriptionService.getPlans();
+      // Backend already returns only active plans sorted by displayOrder
       setPlans(data);
     } catch {
       // silent
@@ -45,15 +46,13 @@ export default function PlansScreen() {
     loadPlans();
   }, [loadPlans]);
 
-  const getPeriodLabel = (billingCycle: string | undefined, isLifetime: boolean | undefined) => {
+  const getPeriodLabel = (durationDays: number | null, isLifetime: boolean) => {
     if (isLifetime) return t('plans.period_lifetime');
-    switch (billingCycle) {
-      case 'MONTHLY':    return t('plans.period_month');
-      case 'QUARTERLY':  return t('plans.period_quarter');
-      case 'SEMESTER':   return t('plans.period_semester');
-      case 'YEARLY':     return t('plans.period_year');
-      default:           return '';
-    }
+    if (!durationDays) return '';
+    if (durationDays <= 31)  return t('plans.period_month');
+    if (durationDays <= 100) return t('plans.period_quarter');
+    if (durationDays <= 200) return t('plans.period_semester');
+    return t('plans.period_year');
   };
 
   const handleSubscribe = useCallback((plan: Plan) => {
@@ -140,34 +139,50 @@ export default function PlansScreen() {
       fontWeight: '700',
     },
     planName: {
-      ...typography.header,
-      color: colors.foreground,
       fontSize: 18,
+      fontWeight: '700',
+      color: colors.foreground,
+      lineHeight: 24,
+    },
+    priceRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginTop: spacing.sm,
+      gap: 4,
     },
     planPrice: {
-      fontSize: 32,
+      fontSize: 30,
       fontWeight: '800',
       color: colors.foreground,
-      marginTop: spacing.xs,
+      lineHeight: 36,
     },
     planPeriod: {
-      ...typography.body,
+      fontSize: 14,
       color: colors.mutedForeground,
+      lineHeight: 20,
     },
     planMonthly: {
-      ...typography.small,
+      fontSize: 12,
       color: colors.mutedForeground,
-      marginTop: spacing.xs,
+      marginTop: 4,
+      lineHeight: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: spacing.md,
     },
     featureRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      marginTop: spacing.sm,
+      marginBottom: spacing.xs,
     },
     featureText: {
-      ...typography.body,
+      fontSize: 14,
       color: colors.foreground,
+      lineHeight: 20,
+      flex: 1,
     },
     subscribeButton: {
       borderRadius: borderRadius.lg,
@@ -200,21 +215,24 @@ export default function PlansScreen() {
       backgroundColor: colors.primary + '10',
       padding: spacing.lg,
       marginBottom: spacing.xl,
-      gap: spacing.sm,
     },
     trialRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
+      marginBottom: spacing.sm,
     },
     trialTitle: {
-      ...typography.header,
-      color: colors.foreground,
       fontSize: 16,
+      fontWeight: '700',
+      color: colors.foreground,
+      lineHeight: 22,
     },
     trialDesc: {
-      ...typography.body,
+      fontSize: 14,
       color: colors.mutedForeground,
+      lineHeight: 20,
+      marginBottom: spacing.sm,
     },
     trialButton: {
       borderRadius: borderRadius.lg,
@@ -251,7 +269,8 @@ export default function PlansScreen() {
     );
   }
 
-  const currentPlanSlug = accessStatus?.planSlug;
+  // Web frontend marks 'anual' as popular — replicate same logic
+  const POPULAR_SLUG = 'anual';
 
   return (
     <ScreenContainer>
@@ -288,39 +307,49 @@ export default function PlansScreen() {
         <Text style={styles.sectionTitle}>{t('plans.section_plans')}</Text>
 
         {plans.map((plan) => {
-          const isCurrentPlan = currentPlanSlug === plan.slug;
-          const periodLabel = getPeriodLabel(plan.billingCycle, plan.isLifetime);
-          const features: string[] = [];
-          if (plan.isLifetime) {
-            features.push(t('plans.feature_permanent'));
-            features.push(t('plans.feature_no_renewal'));
-            features.push(t('plans.feature_priority_support'));
-          }
-          features.push(t('plans.feature_hd_channels'));
-          features.push(t('plans.feature_movies_series'));
-          features.push(t('plans.feature_multidevice'));
-          features.push(t('plans.feature_support'));
+          const isPopular = plan.slug === POPULAR_SLUG;
+          const periodLabel = getPeriodLabel(plan.durationDays, plan.isLifetime);
+          const priceReais = plan.priceInCents / 100;
+          // Monthly equivalent for plans longer than 30 days (matches web frontend logic)
+          const monthlyEquiv =
+            !plan.isLifetime && plan.durationDays && plan.durationDays > 31
+              ? plan.priceInCents / plan.durationDays * 30 / 100
+              : null;
+          // Features hardcoded — backend does not return them (same as web frontend)
+          const features: string[] = [
+            ...(plan.isLifetime
+              ? [t('plans.feature_permanent'), t('plans.feature_no_renewal'), t('plans.feature_priority_support')]
+              : []),
+            t('plans.feature_hd_channels'),
+            t('plans.feature_movies_series'),
+            t('plans.feature_multidevice'),
+            t('plans.feature_support'),
+          ];
 
           return (
             <View
               key={plan.id}
-              style={[styles.planCard, plan.isPopular && styles.planCardPopular]}
+              style={[styles.planCard, isPopular && styles.planCardPopular]}
             >
-              {plan.isPopular && (
+              {isPopular && (
                 <View style={styles.popularBadge}>
                   <Text style={styles.popularBadgeText}>{t('plans.popular_badge')}</Text>
                 </View>
               )}
               <Text style={styles.planName}>{plan.name}</Text>
-              <Text style={styles.planPrice}>
-                R$ {plan.price.toFixed(2).replace('.', ',')}
-                <Text style={styles.planPeriod}>{periodLabel}</Text>
-              </Text>
-              {plan.monthlyEquivalent && !plan.isLifetime && (
+              <View style={styles.priceRow}>
+                <Text style={styles.planPrice}>
+                  R$ {priceReais.toFixed(2).replace('.', ',')}
+                </Text>
+                {periodLabel ? <Text style={styles.planPeriod}>{periodLabel}</Text> : null}
+              </View>
+              {monthlyEquiv !== null && (
                 <Text style={styles.planMonthly}>
-                  {t('plans.monthly_equiv', { price: `R$ ${plan.monthlyEquivalent.toFixed(2).replace('.', ',')}` })}
+                  {t('plans.monthly_equiv', { price: `R$ ${monthlyEquiv.toFixed(2).replace('.', ',')}` })}
                 </Text>
               )}
+
+              <View style={styles.divider} />
 
               {features.map((feat) => (
                 <View key={feat} style={styles.featureRow}>
@@ -329,18 +358,12 @@ export default function PlansScreen() {
                 </View>
               ))}
 
-              {isCurrentPlan ? (
-                <View style={styles.currentPlanBadge}>
-                  <Text style={styles.currentPlanText}>{t('plans.current_plan')}</Text>
-                </View>
-              ) : (
-                <Pressable
-                  style={({ pressed }) => [styles.subscribeButton, { opacity: pressed ? 0.8 : 1 }]}
-                  onPress={() => handleSubscribe(plan)}
-                >
-                  <Text style={styles.subscribeButtonText}>{t('plans.btn_subscribe')}</Text>
-                </Pressable>
-              )}
+              <Pressable
+                style={({ pressed }) => [styles.subscribeButton, { opacity: pressed ? 0.8 : 1 }]}
+                onPress={() => handleSubscribe(plan)}
+              >
+                <Text style={styles.subscribeButtonText}>{t('plans.btn_subscribe')}</Text>
+              </Pressable>
             </View>
           );
         })}
