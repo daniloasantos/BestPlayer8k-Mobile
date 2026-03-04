@@ -298,7 +298,10 @@
         "logout_confirm_title": "Logout",
         "logout_confirm_message": "Are you sure you want to logout?",
         "app_version": "BestPlayer8k v1.0.0",
-        "select_language": "Select Language"
+        "select_language": "Select Language",
+        "subscription_section": "Subscription",
+        "my_subscription": "My subscription",
+        "see_plans": "See plans"
     },
     "channels": {
         "all_channels": "All Channels",

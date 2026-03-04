@@ -298,7 +298,10 @@
         "logout_confirm_title": "Cerrar sesión",
         "logout_confirm_message": "¿Estás seguro de que deseas cerrar sesión?",
         "app_version": "BestPlayer8k v1.0.0",
-        "select_language": "Seleccionar Idioma"
+        "select_language": "Seleccionar Idioma",
+        "subscription_section": "Suscripción",
+        "my_subscription": "Mi suscripción",
+        "see_plans": "Ver planes"
     },
     "channels": {
         "all_channels": "Todos los Canales",

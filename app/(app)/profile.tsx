@@ -369,16 +369,16 @@ export default function ProfileScreen() {
 
         {/* Subscription Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Assinatura</Text>
+          <Text style={styles.sectionTitle}>{t('profiles.subscription_section')}</Text>
           <Card style={styles.menuCard}>
             <MenuItem
               icon={CreditCard}
-              label="Minha assinatura"
+              label={t('profiles.my_subscription')}
               onPress={() => router.push('/subscription')}
             />
             <MenuItem
               icon={CreditCard}
-              label="Ver planos"
+              label={t('profiles.see_plans')}
               onPress={() => router.push('/plans')}
             />
           </Card>

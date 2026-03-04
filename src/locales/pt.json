@@ -237,7 +237,10 @@
         "logout_confirm_title": "Sair",
         "logout_confirm_message": "Tem certeza que deseja sair da sua conta?",
         "app_version": "BestPlayer8k v1.0.0",
-        "select_language": "Selecionar Idioma"
+        "select_language": "Selecionar Idioma",
+        "subscription_section": "Assinatura",
+        "my_subscription": "Minha assinatura",
+        "see_plans": "Ver planos"
     },
     "channels": {
         "all_channels": "Todos os Canais",
